@@ -9,7 +9,9 @@ window.onload = function() {
 	mouseData = {
 		x: 0, 
 		y: 0
-	};
+	},
+	// SAT TEST RESULT 
+	testResult;
 	
 	var daxes;
 	
@@ -130,7 +132,7 @@ window.onload = function() {
 		{x: -100, y: -50},
 		{x: 10, y: -100},
 		{x: 50, y: -50},
-		{x: 50, y: 50},
+		{x: 60, y: 50},
 		{x: 0, y: 80},
 		{x: -50, y: 50}
 	], false);
@@ -139,10 +141,11 @@ window.onload = function() {
 	
 	
 	var playerRect = new FloatRects(context.canvas.width/2, context.canvas.height/2, [
-		{x: -60, y: -50},
-		{x: 100, y: -25},
-		{x: 80, y: 25},
-		{x: -25, y: 60}
+		{x: -25, y: -25},
+		{x: 30, y: -25},
+		{x: 80, y: 0},
+		{x: 20, y: 25},
+		{x: -30, y: 10}
 	], true);
 	rects.push(playerRect);
 	spatialHash.insert(playerRect);
@@ -150,6 +153,8 @@ window.onload = function() {
 	function update() {
 		var i = 0,
 		targetRects;
+		
+	
 		
 		spatialHash.clear();
 		
@@ -163,13 +168,20 @@ window.onload = function() {
 		
 		for(i = 0; i < targetRects.length; i++)
 		{
-			if(targetRects[i] !== playerRect && SATTest(targetRects[i], playerRect))
-				targetRects[i].overlap = true;
+		
+			
+			if(targetRects[i] !== playerRect) {
+				testResult = SATTest(targetRects[i], playerRect);
+				if(testResult)
+					targetRects[i].overlap = true;
+			}
 		}
 	}
 	
 	function redraw() {
-		var i = 0;
+		var i = 0,
+		mta,
+		vector;
 		
 		context.clearRect(0, 0, context.canvas.width, context.canvas.height);
 		
@@ -184,18 +196,18 @@ window.onload = function() {
 			rects[i].redraw();
 		}
 		
-		if(typeof daxes !== 'undefined') {
-				//console.log(axes.length, axes);
-				for(var i = 0; i < daxes.length; i++) {
-					context.beginPath();
-					context.strokeStyle = '#FFFFFF';
-					context.lineWidth = 2;
-					context.moveTo(daxes[i].x+50, daxes[i].y+50)
-					context.lineTo(daxes[i].x*20+50, daxes[i].y*20+50)
-					context.stroke();
-					context.closePath();
-				}
-			}
+		if(typeof testResult !== 'undefined' && typeof testResult.magnitude !== 'undefined' && typeof testResult.axis !== 'undefined') {
+			mta = testResult.magnitude;
+			vector = testResult.axis;
+			//console.log(mta, vector);
+			context.beginPath();
+			context.strokeStyle = '#FFAE00';
+			context.lineWidth = 2;
+			context.moveTo(rects[0].x, rects[0].y);
+			context.lineTo(rects[0].x+vector.x*mta, rects[0].y+vector.y*mta);
+			context.stroke();
+			context.closePath();
+		}
 		
 		window.setTimeout(function(){
 			window.requestAnimationFrame(redraw);
