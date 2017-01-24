@@ -14,7 +14,7 @@ function breadthFirstSearch(polygon, callback, options) {
 	var y;
 	var width;
 	var height;
-	var cellSize = 0,
+	var cellSize = 0;
 	var start;
 	var nodeNew;
 	var nodeCallback;
@@ -71,7 +71,7 @@ function breadthFirstSearch(polygon, callback, options) {
 		};
 		
 		options = extend(defaults, options);
-		console.log('node:', options);
+		//console.log('node:', options);
 		this.visited = false;
 		this.distance = options.distance;
 		this.neighbors = [];
@@ -108,7 +108,7 @@ function breadthFirstSearch(polygon, callback, options) {
 			nodeCallback(this, x, y, cellSize);
 		}
 		
-		console.log('node: Grid position at ' + x + ' ' + y);
+		//console.log('node: Grid position at ' + x + ' ' + y);
 		
 		if(typeof node.grid[x] === 'undefined')
 			node.grid[x] = {};
@@ -124,16 +124,16 @@ function breadthFirstSearch(polygon, callback, options) {
 		}
 	
 		if(typeof node.grid[x] === 'undefined') {
-			console.log('first condition');
+			//console.log('first condition');
 			return true;
 		}
 		
 		if(typeof node.grid[x][y] === 'undefined') {
-			console.log('second condition');
+			//console.log('second condition');
 			return true;
 		}
 		
-		console.log('filled', node.grid[x][y], x, y);
+		//console.log('filled', node.grid[x][y], x, y);
 		return false;
 		
 	}
@@ -153,7 +153,7 @@ function breadthFirstSearch(polygon, callback, options) {
 
 			// Maximum range reached
 			if(this.distance >= range) {
-				console.log('node: floodFill: range reached: ' + range + ' stopping floodfill');
+				//console.log('node: floodFill: range reached: ' + range + ' stopping floodfill');
 				return;
 			}
 			
@@ -170,7 +170,7 @@ function breadthFirstSearch(polygon, callback, options) {
 			if(node.testSpace(x, y+1))
 				bottom = new node(x, y+1, defaultOptions);
 			
-			console.log('test', left, top, right, bottom);
+			//console.log('test', left, top, right, bottom);
 			
 			if(typeof left !== 'undefined') {
 				this.neighbors.push(left);
