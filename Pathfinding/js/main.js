@@ -1,13 +1,12 @@
 window.onload = function() {
-	var 
-	canvas = document.getElementById('canvas');
-	context = canvas.getContext('2d');
-	x = 0,
-	y = 0,
-	sizeX = 50,
-	sizeY = 50,
-	posX = Math.floor(Math.random()*sizeX),
-	posY = Math.floor(Math.random()*sizeY);
+	var canvas = document.getElementById('canvas');
+	var context = canvas.getContext('2d');
+	var x = 0;
+	var y = 0;
+	var sizeX = 50;
+	var sizeY = 50;
+	var posX = Math.floor(Math.random()*sizeX);
+	var posY = Math.floor(Math.random()*sizeY);
 	
 	context.canvas.width  = canvas.clientWidth;
 	context.canvas.height = canvas.clientHeight;
@@ -20,14 +19,16 @@ window.onload = function() {
 			
 			context.fillStyle= typeof node.origin === 'undefined' ? '#ff0000' : '#8b8e89';
 			context.stokeStyle='#ffffff';
-			
 			context.fill();
+			context.fillStyle="#000000";
+			context.fillText(node.distance, x*cellSize+cellSize/2, y*cellSize+cellSize/2);
+			
 			context.stroke();
 			context.closePath();
 			
 			console.log('drawing');
 		},
-		range: 6
+		range: 5
 	})
 	
 	function update() {

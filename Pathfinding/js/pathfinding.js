@@ -1,24 +1,25 @@
 // Provide a destination, create a grid from that destination I guess
 // Should be used with some sort of broad phase collision checking via callback
 function breadthFirstSearch(polygon, callback, options) {
-	var 
-	defaults = {
+	var defaults = {
 		xMin: undefined,
 		xMax: undefined,
 		yMin: undefined,
 		yMax: undefined,
 		range: undefined,
-		nodeCallback: undefined
-	},
-	x,
-	y,
-	width,
-	height,
-	cellSize = 0,
-	start,
-	nodeNew,
-	nodeCallback,
-	range;
+		nodeCallback: undefined,
+		nodeTest: undefined
+	};
+	var x;
+	var y;
+	var width;
+	var height;
+	var cellSize = 0,
+	var start;
+	var nodeNew;
+	var nodeCallback;
+	var nodeTest;
+	var range;
 	
 	function extend(defaults, options) {
 		var prop,
@@ -43,6 +44,7 @@ function breadthFirstSearch(polygon, callback, options) {
 	options = extend(defaults, options);
 	
 	nodeCallback = options.nodeCallback;
+	noteTest = options.nodeTest;
 	range = options.range;
 	
 	x = polygon.x;
@@ -85,7 +87,7 @@ function breadthFirstSearch(polygon, callback, options) {
 		options = extend(defaults, options);
 		
 		if(typeof options.origin !== 'undefined') {
-			this.distance = options.origin.distance += 1;
+			this.distance = options.origin.distance + 1;
 			this.origin = options.origin;
 		}
 		
@@ -103,7 +105,6 @@ function breadthFirstSearch(polygon, callback, options) {
 		
 		
 		if(typeof nodeCallback === 'function') {
-			console.log('firing');
 			nodeCallback(this, x, y, cellSize);
 		}
 		
@@ -117,6 +118,11 @@ function breadthFirstSearch(polygon, callback, options) {
 	}
 	
 	node.testSpace = function (x, y) {
+		if(typeof nodeText === 'function') {
+			console.log('test stuff');
+			return nodeTest();
+		}
+	
 		if(typeof node.grid[x] === 'undefined') {
 			console.log('first condition');
 			return true;
@@ -134,17 +140,16 @@ function breadthFirstSearch(polygon, callback, options) {
 	
 	node.prototype = {
 		floodFill: function() {
-			var 
-			defaultOptions = {
+			var defaultOptions = {
 				origin: this,
 				distance: this.distance + 1
-			},
-			x = this.x, 
-			y = this.y,
-			left,
-			top,
-			right,
-			bottom;
+			};
+			var x = this.x; 
+			var y = this.y;
+			var left;
+			var top;
+			var right;
+			var bottom;
 
 			// Maximum range reached
 			if(this.distance >= range) {
