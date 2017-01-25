@@ -1,4 +1,6 @@
+window.range = 30;
 window.onload = function() {
+	var mousePosition = {x: 0, y: 0};
 	var canvas = document.getElementById('canvas');
 	var context = canvas.getContext('2d');
 	var x = 0;
@@ -11,6 +13,7 @@ window.onload = function() {
 	var fps = 60;
 	var updateInterval;
 	var nodes;
+	var spatialHash = new SpatialHash(25, 25);
 	context.canvas.width  = canvas.clientWidth;
 	context.canvas.height = canvas.clientHeight;
 	
@@ -27,6 +30,7 @@ window.onload = function() {
 		redraw: function(){
 		
 			context.beginPath();
+			context.fillStyle="#000000";
 			context.rect(this.x-this.width/2, this.y-this.height/2, this.width, this.height);
 			context.fill();
 			context.closePath();
@@ -35,14 +39,46 @@ window.onload = function() {
 	
 	obstacleRectsArr.push(new obstacleRects(200, 90, 100, 150));
 	obstacleRectsArr.push(new obstacleRects(600, 200, 150, 100));
+	
+	
+
 	// END: Obstacle Rects
 	
-	
+	events : {
+		$(window).on('mousemove', function(e) {
+			mousePosition.x = e.clientX-$(canvas).offset().left;
+			mousePosition.y = e.clientY-$(canvas).offset().top;
+		});
+	}
 	
 	
 	function update() {
-		nodes = breadthFirstSearch({x: 200, y: 200, width: 25, height: 25}, undefined, {
-			range: 5
+		var r = 0;
+		
+		spatialHash.clear();
+	
+		for(r = 0; r < obstacleRectsArr.length; r++) {
+			spatialHash.insert(obstacleRectsArr[r].x, obstacleRectsArr[r].y, obstacleRectsArr[r].width, obstacleRectsArr[r].height, obstacleRectsArr[r]);
+		}
+	
+		nodes = breadthFirstSearch({x: mousePosition.x-25/2, y: mousePosition.y-25/2, width: 25, height: 25}, undefined, {
+			range: window.range,
+			nodeTest: function(x, y, size) {
+				var results = spatialHash.retrieve(x*size+size/2, y*size+size/2, size, size);
+				var r = 0;
+				var hit = false;
+	
+				for(r = 0; r < results.length; r++) {
+					
+					if(!hit)
+						hit = AABB({x: x*size+size/2, y: y*size+size/2, width: size, height: size}, results[r]);
+						
+					if(hit) break;
+				}
+				//console.log(x, y, size, hit);
+				return !hit;
+				
+			}
 		});
 	}
 	
@@ -53,8 +89,29 @@ window.onload = function() {
 		var node;
 	 
 		
+		context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+		
 		for(o = 0; o < obstacleRectsArr.length; o++) {
 			obstacleRectsArr[o].redraw();
+		}
+		
+		for(prop in nodes) {
+			for(prop2 in nodes[prop]) {
+				node = nodes[prop][prop2];
+					
+				context.beginPath();
+				context.rect(node.x*node.nodeSize, node.y*node.nodeSize, node.nodeSize, node.nodeSize);
+		
+		
+				context.fillStyle= typeof node.origin === 'undefined' ? '#ff0000' : '#8b8e89';
+				context.stokeStyle='#ffffff';
+				context.fill();
+				context.fillStyle="#000000";
+				context.fillText(node.distance, node.x*node.nodeSize+node.nodeSize/2, node.y*node.nodeSize+node.nodeSize/2);
+		
+				context.stroke();
+				context.closePath();
+			}
 		}
 		
 		window.setTimeout(function() {
@@ -62,27 +119,9 @@ window.onload = function() {
 				redraw();
 			});
 		}, 1000/fps);
-		
-		for(prop in nodes) {
-			node = nodes[prop];
-			console.log(node);
-					
-			context.beginPath();
-			context.rect(node.x*node.cellSize, node.y*node.cellSize, node.cellSize, node.cellSize);
-		
-		
-			context.fillStyle= typeof node.origin === 'undefined' ? '#ff0000' : '#8b8e89';
-			context.stokeStyle='#ffffff';
-			context.fill();
-			context.fillStyle="#000000";
-			context.fillText(node.distance, node.x*node.cellSize+node.cellSize/2, node.y*node.cellSize+node.cellSize/2);
-		
-			context.stroke();
-			context.closePath();
-		}
 	}
 	
-	redraw();
+	//redraw();
 	
 	updateInterval = window.setInterval(function(){
 		update();
