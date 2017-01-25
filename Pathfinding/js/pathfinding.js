@@ -1,5 +1,6 @@
 // Provide a destination, create a grid from that destination I guess
 // Should be used with some sort of broad phase collision checking via callback
+// See http://www.redblobgames.com/pathfinding/a-star/introduction.html
 function breadthFirstSearch(polygon, callback, options) {
 	var defaults = {
 		xMin: undefined,
@@ -8,7 +9,8 @@ function breadthFirstSearch(polygon, callback, options) {
 		yMax: undefined,
 		range: undefined,
 		nodeCallback: undefined,
-		nodeTest: undefined
+		nodeTest: undefined,
+		target: undefined
 	};
 	var x;
 	var y;
@@ -76,7 +78,7 @@ function breadthFirstSearch(polygon, callback, options) {
 		options = extend(defaults, options);
 		//console.log('node:', options);
 		this.visited = false;
-		this.distance = options.distance;
+		this.distance = options.distance; // Distance from origin
 		this.neighbors = {};
 		this.origin = undefined;
 		this.x = x;
@@ -84,12 +86,6 @@ function breadthFirstSearch(polygon, callback, options) {
 		this.gridX = Math.round(x);
 		this.gridY = Math.round(y);
 		this.nodeSize = cellSize;
-		
-		// cell already exists, return
-		if(typeof node.grid[x] !== 'undefined' && typeof node.grid[x][y] !== 'undefined') {
-			//console.log('node: Grid position already occupied');
-			return false;
-		}
 		
 		options = extend(defaults, options);
 		
@@ -104,11 +100,7 @@ function breadthFirstSearch(polygon, callback, options) {
 		
 		//console.log('node: Grid position at ' + x + ' ' + y);
 		
-		if(typeof node.grid[this.gridX] === 'undefined')
-			node.grid[this.gridX] = {};
-		
-		if(typeof node.grid[this.gridX][this.gridY] === 'undefined')
-			node.grid[this.gridX][this.gridY] = this;
+		return this;
 	}
 	
 	node.testSpace = function (x, y, distance) {
@@ -118,8 +110,13 @@ function breadthFirstSearch(polygon, callback, options) {
 			result = true;
 		else if(typeof node.grid[x][y] === 'undefined')
 			result = true;
-		
+		else if(node.grid[x][y].distance > distance)
+			result = true;
+			
 		if(result) {
+			/*
+			 Callbacks should also test for a target; some special return value?
+			*/
 			if(typeof nodeTest === 'function') {
 				result = nodeTest(x, y, cellSize);
 			}
@@ -128,6 +125,20 @@ function breadthFirstSearch(polygon, callback, options) {
 		//console.log('filled', node.grid[x][y], x, y);
 		return result;
 		
+	}
+	
+	node.addToGrid = function(nodeInstance) {
+		// cell already exists, return
+		if(typeof node.grid[x] !== 'undefined' && typeof node.grid[x][y] !== 'undefined') {
+			//console.log('node: Grid position already occupied');
+			return false;
+		}
+		
+		if(typeof node.grid[nodeInstance.gridX] === 'undefined')
+			node.grid[nodeInstance.gridX] = {};
+		
+		if(typeof node.grid[nodeInstance.gridX][nodeInstance.gridY] === 'undefined')
+			node.grid[nodeInstance.gridX][nodeInstance.gridY] = nodeInstance;
 	}
 	
 	node.prototype = {
@@ -141,7 +152,7 @@ function breadthFirstSearch(polygon, callback, options) {
 	
 			if(typeof dirs[dir] !== 'undefined') {
 				
-				if(typeof this.neighbors[dir] === 'undefined')
+				if(typeof this.neighbors[dir] === 'undefined') 
 					this.neighbors[dir] = node;
 				
 				// new neighbor node gets "this" node as its neighbor, based on the opposite of the direction entered
@@ -181,55 +192,43 @@ function breadthFirstSearch(polygon, callback, options) {
 				return;
 			}
 			*/
-			
-			
-			if(typeof this.neighbors.left === 'undefined' && node.testSpace(gridX-1, gridY, defaultOptions.distance)) {
-				left = this.addNeighbor('left', new node(x-1, y, defaultOptions));
+
+			if(node.testSpace(gridX-1, gridY, defaultOptions.distance)) {
+				left = new node(x-1, y, defaultOptions);
+				this.addNeighbor('left', left);
+				node.addToGrid(left);
 				nodesAdded.push(left);
 			}
 				
-			if(typeof this.neighbors.top === 'undefined' && node.testSpace(gridX, gridY-1, defaultOptions.distance)) {
-				top = this.addNeighbor('top', new node(x, y-1, defaultOptions));
+			if(node.testSpace(gridX, gridY-1, defaultOptions.distance)) {
+				top = new node(x, y-1, defaultOptions);
+				this.addNeighbor('top', top);
+				node.addToGrid(top);
 				nodesAdded.push(top);
 			}
 				
-			if(typeof this.neighbors.right === 'undefined' && node.testSpace(gridX+1, gridY, defaultOptions.distance)) {
-				right = this.addNeighbor('right', new node(x+1, y, defaultOptions));
+			if(node.testSpace(gridX+1, gridY, defaultOptions.distance)) {
+				right = new node(x+1, y, defaultOptions);
+				this.addNeighbor('right', right);
+				node.addToGrid(right);
 				nodesAdded.push(right);
 			}
 				
-			if(typeof this.neighbors.bottom === 'undefined' && node.testSpace(gridX, gridY+1, defaultOptions.distance)) {
-				bottom = this.addNeighbor('bottom', new node(x, y+1, defaultOptions));
+			if(node.testSpace(gridX, gridY+1, defaultOptions.distance)) {
+			bottom = new node(x, y+1, defaultOptions);
+				this.addNeighbor('bottom', bottom);
+				node.addToGrid(bottom);
 				nodesAdded.push(bottom);
 			}
 			
-			
-			
 			return nodesAdded;
-			//console.log('test', left, top, right, bottom);
-			/*
-			if(typeof left !== 'undefined') {
-					left.floodFill();
-			}
-			
-			if(typeof right !== 'undefined') {
-					right.floodFill();
-			}
-
-			if(typeof top !== 'undefined') {
-					top.floodFill()
-			}
-				
-			if(typeof bottom !== 'undefined') {
-					bottom.floodFill();
-			}
-			*/
-				
 		}
 	};
 	
+	
 	// Generate grid from start position
 	nextNodes = [new node(x, y)];
+	node.addToGrid(nextNodes[0]);
 	var tempNodes = [];
 	for(test = 0; test < range; test++) {
 		for(test2 = 0; test2 < nextNodes.length; test2++) {
