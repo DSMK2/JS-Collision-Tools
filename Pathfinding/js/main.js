@@ -1,4 +1,4 @@
-window.range = 20;
+window.range = 50;
 window.onload = function() {
 	var mousePosition = {x: 0, y: 0};
 	var canvas = document.getElementById('canvas');
@@ -15,6 +15,7 @@ window.onload = function() {
 	var nodes;
 	var spatialHash = new SpatialHash(50, 50);
 	var target;
+	
 	context.canvas.width  = canvas.clientWidth;
 	context.canvas.height = canvas.clientHeight;
 	
@@ -37,10 +38,10 @@ window.onload = function() {
 			context.closePath();
 		}
 	}
-	target = new obstacleRects(800, 1000, 25, 25);
+	target = new obstacleRects(800, 300, 25, 25);
 	obstacleRectsArr.push(new obstacleRects(200, 90, 100, 150));
 	obstacleRectsArr.push(new obstacleRects(600, 200, 150, 100));
-	obstacleRectsArr.push(target);
+	//obstacleRectsArr.push(target);
 	
 	
 	
@@ -63,8 +64,9 @@ window.onload = function() {
 		for(r = 0; r < obstacleRectsArr.length; r++) {
 			spatialHash.insert(obstacleRectsArr[r].x, obstacleRectsArr[r].y, obstacleRectsArr[r].width, obstacleRectsArr[r].height, obstacleRectsArr[r]);
 		}
-	
-		nodes = breadthFirstSearch({x: mousePosition.x-25/2, y: mousePosition.y-25/2, width: 25, height: 25}, undefined, {
+		//nodes = breadthFirstSearch({x: mousePosition.x-25/2, y: mousePosition.y-25/2, width: 25, height: 25}, undefined, {
+		if(typeof nodes === 'undefined') {
+		nodes = breadthFirstSearch({x: context.canvas.width/2, y: context.canvas.height/2, width: 25, height: 25}, undefined, {
 			range: window.range,
 			nodeTest: function(x, y, size) {
 				var results = spatialHash.retrieve(x*size+size/2, y*size+size/2, size, size);
@@ -82,8 +84,9 @@ window.onload = function() {
 				return !hit;
 				
 			},
-			target: target
+			targetPosition: {x: 800, y: 300}
 		});
+		}
 	}
 	
 	function redraw(){
@@ -99,6 +102,8 @@ window.onload = function() {
 			obstacleRectsArr[o].redraw();
 		}
 
+		
+
 		for(prop in nodes) {
 			for(prop2 in nodes[prop]) {
 				node = nodes[prop][prop2];
@@ -109,15 +114,18 @@ window.onload = function() {
 		
 				context.fillStyle= typeof node.origin === 'undefined' ? '#ff0000' : '#8b8e89';
 				context.stokeStyle='#ffffff';
+				context.fillStyle= node.visited ? '#ffae00' : '#999';
 				context.fill();
-				context.fillStyle="#000000";
-				context.fillText(node.distance, node.x*node.nodeSize+node.nodeSize/2, node.y*node.nodeSize+node.nodeSize/2);
+				context.fillStyle= '#ffffff';
+				//context.fillText('(' + node.gridX + ',' + node.gridY + ')\n' + node.distance, node.x*node.nodeSize, node.y*node.nodeSize+node.nodeSize/2);
+				context.fillText(node.distance + ' ' + node.arrow, node.x*node.nodeSize, node.y*node.nodeSize+node.nodeSize/2);
 		
 				context.stroke();
 				context.closePath();
 			}
 		}
 
+		target.redraw();
 		
 		window.setTimeout(function() {
 			window.requestAnimationFrame(function() {
