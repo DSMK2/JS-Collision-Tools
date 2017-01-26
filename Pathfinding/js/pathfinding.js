@@ -21,11 +21,9 @@ function breadthFirstSearch(polygon, callback, options) {
 	var nodeNew;
 	var nodeCallback;
 	var nodeTest;
-	var test = 0;
-	var test2 = 0;
-	var nextNodes;
 	var range;
 	var finished = false;
+	
 	function extend(defaults, options) {
 		var prop,
 		result = {};
@@ -63,22 +61,17 @@ function breadthFirstSearch(polygon, callback, options) {
 	x = x/cellSize; //Math.round(x/cellSize); 
 	y = y/cellSize; //Math.round(y/cellSize); 
 	
-	node.grid = {
-	};
+	if(options.target !== 'undefined') {
+		// Calculate grid position here
+	}
 	
 	//new node(x, y);
 	
-	function node(x, y, options) {
-		var defaults = {
-			origin: undefined,
-			validCallback: undefined,
-			distance: 0
-		};
-		
-		options = extend(defaults, options);
+	function Node(x, y, origin) {
+
 		//console.log('node:', options);
 		this.visited = false;
-		this.distance = options.distance; // Distance from origin
+		this.distance = 0; // = typeof distance !== 'undefined' ? distance : 0; // Distance from origin
 		this.neighbors = {};
 		this.origin = undefined;
 		this.x = x;
@@ -86,12 +79,10 @@ function breadthFirstSearch(polygon, callback, options) {
 		this.gridX = Math.round(x);
 		this.gridY = Math.round(y);
 		this.nodeSize = cellSize;
-		
-		options = extend(defaults, options);
-		
-		if(typeof options.origin !== 'undefined') {
-			this.distance = options.origin.distance + 1;
-			this.origin = options.origin;
+				
+		if(typeof origin !== 'undefined' && origin instanceof Node) {
+			this.distance = origin.distance + 1;
+			this.origin = origin;
 		}
 		
 		if(typeof nodeCallback === 'function') {
@@ -103,20 +94,29 @@ function breadthFirstSearch(polygon, callback, options) {
 		return this;
 	}
 	
-	node.testSpace = function (x, y, distance) {
+	Node.grid = {
+	};
+	
+	/**
+	* @function node.testSpace
+	* @description Tests a given (grid) space to see if it is available for a node
+	* @params {number} x - x coordinate of grid position
+	* @params {number} y - y coordinate of grid position
+	* @param {number} [distance] - Optional value that forces true if overriding with a node of lower distance is allowed
+	* @returns {boolean} - True if node has available space, false otherwise
+	*/
+	Node.testSpace = function (x, y, distance) {
 		var result = false;
 		
-		if(typeof node.grid[x] === 'undefined')
+		if(typeof Node.grid[x] === 'undefined')
 			result = true;
-		else if(typeof node.grid[x][y] === 'undefined')
+		else if(typeof Node.grid[x][y] === 'undefined')
 			result = true;
-		else if(node.grid[x][y].distance > distance)
+		else if(typeof distance === 'number' && Node.grid[x][y].distance > distance)
 			result = true;
-			
+		
+		// This becomes expensive
 		if(result) {
-			/*
-			 Callbacks should also test for a target; some special return value?
-			*/
 			if(typeof nodeTest === 'function') {
 				result = nodeTest(x, y, cellSize);
 			}
@@ -127,21 +127,31 @@ function breadthFirstSearch(polygon, callback, options) {
 		
 	}
 	
-	node.addToGrid = function(nodeInstance) {
+	/**
+	* @function node.addToGrid
+	* @description Adds a node instance to the node.grid
+	* @param {object} nodeInstance - node instance to add to the grid
+	*/
+	Node.addToGrid = function(nodeInstance) {
 		// cell already exists, return
+		/*
 		if(typeof node.grid[x] !== 'undefined' && typeof node.grid[x][y] !== 'undefined') {
 			//console.log('node: Grid position already occupied');
 			return false;
 		}
+		*/
 		
-		if(typeof node.grid[nodeInstance.gridX] === 'undefined')
-			node.grid[nodeInstance.gridX] = {};
+		if(typeof nodeInstance === 'undefined' || !(nodeInstance instanceof Node))
+			return;
 		
-		if(typeof node.grid[nodeInstance.gridX][nodeInstance.gridY] === 'undefined')
-			node.grid[nodeInstance.gridX][nodeInstance.gridY] = nodeInstance;
+		if(typeof Node.grid[nodeInstance.gridX] === 'undefined')
+			Node.grid[nodeInstance.gridX] = {};
+		
+		if(typeof Node.grid[nodeInstance.gridX][nodeInstance.gridY] === 'undefined')
+			Node.grid[nodeInstance.gridX][nodeInstance.gridY] = nodeInstance;
 	}
 	
-	node.prototype = {
+	Node.prototype = {
 		addNeighbor: function(dir, node) {
 			var dirs = {
 				left: 'left',
@@ -170,10 +180,6 @@ function breadthFirstSearch(polygon, callback, options) {
 		},
 		// Recursive does not work as it does one arm, then another, then another, and will cause the other calls to deal with already existing nodes
 		floodFill: function(ignoreDirs) {
-			var defaultOptions = {
-				origin: this,
-				distance: this.distance + 1
-			};
 			var x = this.x; 
 			var y = this.y;
 			var gridX = this.gridX;
@@ -183,41 +189,33 @@ function breadthFirstSearch(polygon, callback, options) {
 			var right;
 			var bottom;
 			var nodesAdded = [];
-			
-			/*
-			// Maximum range reached
-			if(this.distance >= range) {
-				//console.log('node: floodFill: range reached: ' + range + ' stopping floodfill');
-				finished = true;
-				return;
-			}
-			*/
+			var newDistance =  this.distance+1;
 
-			if(node.testSpace(gridX-1, gridY, defaultOptions.distance)) {
-				left = new node(x-1, y, defaultOptions);
+			if(Node.testSpace(gridX-1, gridY, newDistance)) {
+				left = new Node(x-1, y, this);
 				this.addNeighbor('left', left);
-				node.addToGrid(left);
+				Node.addToGrid(left);
 				nodesAdded.push(left);
 			}
 				
-			if(node.testSpace(gridX, gridY-1, defaultOptions.distance)) {
-				top = new node(x, y-1, defaultOptions);
+			if(Node.testSpace(gridX, gridY-1, newDistance)) {
+				top = new Node(x, y-1, this);
 				this.addNeighbor('top', top);
-				node.addToGrid(top);
+				Node.addToGrid(top);
 				nodesAdded.push(top);
 			}
 				
-			if(node.testSpace(gridX+1, gridY, defaultOptions.distance)) {
-				right = new node(x+1, y, defaultOptions);
+			if(Node.testSpace(gridX+1, gridY, newDistance)) {
+				right = new Node(x+1, y, this);
 				this.addNeighbor('right', right);
-				node.addToGrid(right);
+				Node.addToGrid(right);
 				nodesAdded.push(right);
 			}
 				
-			if(node.testSpace(gridX, gridY+1, defaultOptions.distance)) {
-			bottom = new node(x, y+1, defaultOptions);
+			if(Node.testSpace(gridX, gridY+1, newDistance)) {
+				bottom = new Node(x, y+1, this);
 				this.addNeighbor('bottom', bottom);
-				node.addToGrid(bottom);
+				Node.addToGrid(bottom);
 				nodesAdded.push(bottom);
 			}
 			
@@ -227,17 +225,27 @@ function breadthFirstSearch(polygon, callback, options) {
 	
 	
 	// Generate grid from start position
-	nextNodes = [new node(x, y)];
-	node.addToGrid(nextNodes[0]);
-	var tempNodes = [];
-	for(test = 0; test < range; test++) {
-		for(test2 = 0; test2 < nextNodes.length; test2++) {
-			tempNodes = tempNodes.concat(nextNodes[test2].floodFill());
-		}
-		nextNodes = tempNodes;
-		tempNodes = [];
-	}
-	//start.floodFill();
+	(function() {
+		var tempNodes = [];
+		var nextNodes = [];
+		var r = 0;
+		var n = 0;
+		
+		// Must have a valid space for starting point
+		if(Node.testSpace(x, y)) {
+			nextNodes = [new Node(x, y)];
+			Node.addToGrid(nextNodes[0]);
 	
-	return node.grid;
+		
+			for(r = 0; r < range; r++) {
+				for(n = 0; n < nextNodes.length; n++) {
+					tempNodes = tempNodes.concat(nextNodes[n].floodFill());
+				}
+				nextNodes = tempNodes;
+				tempNodes = [];
+			}
+		}
+	})();
+	
+	return Node.grid;
 }

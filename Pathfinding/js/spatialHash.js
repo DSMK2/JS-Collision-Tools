@@ -98,12 +98,12 @@ SpatialHash.prototype = {
 
 		// Must have a position
 		if(typeof x !== 'number' && typeof y !== 'number')
-			return;
+			return results;
 		
 		width = typeof width !== 'number' ? 0 : width;
 		height = typeof height !== 'number' ? 0 : height;
 		
-		// Get cell position based on position and bounds
+		// Get cell bounds based on position and bounds
 		boundsX.high = Math.floor((x + width/2) / this.cWidth);
 		boundsX.low = Math.floor((x - width/2) / this.cWidth);
 

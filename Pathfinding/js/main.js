@@ -1,4 +1,4 @@
-window.range = 30;
+window.range = 20;
 window.onload = function() {
 	var mousePosition = {x: 0, y: 0};
 	var canvas = document.getElementById('canvas');
@@ -13,7 +13,8 @@ window.onload = function() {
 	var fps = 60;
 	var updateInterval;
 	var nodes;
-	var spatialHash = new SpatialHash(25, 25);
+	var spatialHash = new SpatialHash(50, 50);
+	var target;
 	context.canvas.width  = canvas.clientWidth;
 	context.canvas.height = canvas.clientHeight;
 	
@@ -36,9 +37,11 @@ window.onload = function() {
 			context.closePath();
 		}
 	}
-	
+	target = new obstacleRects(800, 1000, 25, 25);
 	obstacleRectsArr.push(new obstacleRects(200, 90, 100, 150));
 	obstacleRectsArr.push(new obstacleRects(600, 200, 150, 100));
+	obstacleRectsArr.push(target);
+	
 	
 	
 
@@ -78,7 +81,8 @@ window.onload = function() {
 				//console.log(x, y, size, hit);
 				return !hit;
 				
-			}
+			},
+			target: target
 		});
 	}
 	
@@ -94,7 +98,7 @@ window.onload = function() {
 		for(o = 0; o < obstacleRectsArr.length; o++) {
 			obstacleRectsArr[o].redraw();
 		}
-		
+
 		for(prop in nodes) {
 			for(prop2 in nodes[prop]) {
 				node = nodes[prop][prop2];
@@ -113,6 +117,7 @@ window.onload = function() {
 				context.closePath();
 			}
 		}
+
 		
 		window.setTimeout(function() {
 			window.requestAnimationFrame(function() {
