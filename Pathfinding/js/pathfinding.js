@@ -223,34 +223,22 @@ function breadthFirstSearch(polygon, callback, options) {
 			var bottom;
 			var nodesAdded = [];
 			var newDistance =  this.distance+1;
-			
-			
-			if(Node.testSpace(gridX, gridY-1)) {
-				top = new Node(x, y-1, this);
-				this.addNeighbor('top', top);
-				top.arrow = 'V'
-				Node.addToGrid(top);
-				nodesAdded.push(top);
-			} else
-				this.addNeighbor('top', Node.grid[gridX][gridY-1]);
-			
+
 			if(Node.testSpace(gridX-1, gridY)) {
 				left = new Node(x-1, y, this);
 				this.addNeighbor('left', left);
 				left.arrow = '>'
 				Node.addToGrid(left);
 				nodesAdded.push(left);
-			} else
-				this.addNeighbor('left', Node.grid[gridX-1][gridY]);
+			}
 				
-			if(Node.testSpace(gridX, gridY+1)) {
-				bottom = new Node(x, y+1, this);
-				this.addNeighbor('bottom', bottom);
-				bottom.arrow = '^'
-				Node.addToGrid(bottom);
-				nodesAdded.push(bottom);
-			} else
-				this.addNeighbor('bottom', Node.grid[gridX][gridY+1]);
+			if(Node.testSpace(gridX, gridY-1)) {
+				top = new Node(x, y-1, this);
+				this.addNeighbor('top', top);
+				top.arrow = 'V'
+				Node.addToGrid(top);
+				nodesAdded.push(top);
+			}
 				
 			if(Node.testSpace(gridX+1, gridY)) {
 				right = new Node(x+1, y, this);
@@ -258,10 +246,15 @@ function breadthFirstSearch(polygon, callback, options) {
 				right.arrow = '<'
 				Node.addToGrid(right);
 				nodesAdded.push(right);
-			} else
-				this.addNeighbor('right', Node.grid[gridX+1][gridY]);
+			}
 				
-			
+			if(Node.testSpace(gridX, gridY+1)) {
+				bottom = new Node(x, y+1, this);
+				this.addNeighbor('bottom', bottom);
+				bottom.arrow = '^'
+				Node.addToGrid(bottom);
+				nodesAdded.push(bottom);
+			}
 			
 			return nodesAdded;
 		}

@@ -64,9 +64,8 @@ window.onload = function() {
 		for(r = 0; r < obstacleRectsArr.length; r++) {
 			spatialHash.insert(obstacleRectsArr[r].x, obstacleRectsArr[r].y, obstacleRectsArr[r].width, obstacleRectsArr[r].height, obstacleRectsArr[r]);
 		}
-		//nodes = breadthFirstSearch({x: mousePosition.x-25/2, y: mousePosition.y-25/2, width: 25, height: 25}, undefined, {
-		if(typeof nodes === 'undefined') {
-		nodes = breadthFirstSearch({x: context.canvas.width/2, y: context.canvas.height/2, width: 25, height: 25}, undefined, {
+		nodes = breadthFirstSearch({x: mousePosition.x-25/2, y: mousePosition.y-25/2, width: 25, height: 25}, undefined, {
+
 			range: window.range,
 			nodeTest: function(x, y, size) {
 				var results = spatialHash.retrieve(x*size+size/2, y*size+size/2, size, size);
@@ -86,7 +85,7 @@ window.onload = function() {
 			},
 			targetPosition: {x: 800, y: 300}
 		});
-		}
+
 	}
 	
 	function redraw(){
