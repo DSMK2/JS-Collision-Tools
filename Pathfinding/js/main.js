@@ -64,29 +64,30 @@ window.onload = function() {
 		for(r = 0; r < obstacleRectsArr.length; r++) {
 			spatialHash.insert(obstacleRectsArr[r].x, obstacleRectsArr[r].y, obstacleRectsArr[r].width, obstacleRectsArr[r].height, obstacleRectsArr[r]);
 		}
+		
 		//nodes = breadthFirstSearch({x: mousePosition.x-25/2, y: mousePosition.y-25/2, width: 25, height: 25}, undefined, {
-		if(typeof nodes === 'undefined') {
-		nodes = breadthFirstSearch({x: context.canvas.width/2, y: context.canvas.height/2, width: 25, height: 25}, undefined, {
-			range: window.range,
+		nodes = breadthFirstSearch({x: $(window).width()/2, y: $(window).height()/2, width: 25, height: 25}, undefined, {
+			range: 15,
 			nodeTest: function(x, y, size) {
-				var results = spatialHash.retrieve(x*size+size/2, y*size+size/2, size, size);
+				var results = spatialHash.retrieve(x+size/2, y+size/2, size, size);
 				var r = 0;
 				var hit = false;
-	
+
 				for(r = 0; r < results.length; r++) {
 					
 					if(!hit)
-						hit = AABB({x: x*size+size/2, y: y*size+size/2, width: size, height: size}, results[r]);
+						hit = AABB({x: x+size/2, y: y+size/2, width: size, height: size}, results[r]);
 						
 					if(hit) break;
 				}
-				//console.log(x, y, size, hit);
+
 				return !hit;
 				
 			},
 			targetPosition: {x: 800, y: 300}
 		});
-		}
+		//redraw();
+
 	}
 	
 	function redraw(){
@@ -105,33 +106,34 @@ window.onload = function() {
 		
 
 		for(prop in nodes) {
-			for(prop2 in nodes[prop]) {
-				node = nodes[prop][prop2];
-					
-				context.beginPath();
-				context.rect(node.x*node.nodeSize, node.y*node.nodeSize, node.nodeSize, node.nodeSize);
-		
-		
-				context.fillStyle= typeof node.origin === 'undefined' ? '#ff0000' : '#8b8e89';
-				context.stokeStyle='#ffffff';
-				context.fillStyle= node.visited ? '#ffae00' : '#999';
-				context.fill();
-				context.fillStyle= '#ffffff';
-				//context.fillText('(' + node.gridX + ',' + node.gridY + ')\n' + node.distance, node.x*node.nodeSize, node.y*node.nodeSize+node.nodeSize/2);
-				context.fillText(node.distance + ' ' + node.arrow, node.x*node.nodeSize, node.y*node.nodeSize+node.nodeSize/2);
-		
-				context.stroke();
-				context.closePath();
-			}
+
+			node = nodes[prop];
+				
+			context.beginPath();
+			context.rect(node.x, node.y, node.size, node.size);
+			
+			context.stokeStyle='#000000';
+			context.fillStyle= node.visited ? '#ffae00' : '#999999';
+			
+			context.fill();
+			context.stroke();
+			context.fillStyle= '#000000';
+			context.fillText(node.distance + ' ' + node.arrow, node.x, node.y+node.size/2);
+			context.closePath();
+
 		}
+
+
 
 		target.redraw();
 		
+
 		window.setTimeout(function() {
 			window.requestAnimationFrame(function() {
 				redraw();
 			});
 		}, 1000/fps);
+
 	}
 	
 	//redraw();
@@ -139,7 +141,7 @@ window.onload = function() {
 	updateInterval = window.setInterval(function(){
 		update();
 	}, 1000/fps);
-	
+
 	window.requestAnimationFrame(function() {
 		redraw();
 	});
