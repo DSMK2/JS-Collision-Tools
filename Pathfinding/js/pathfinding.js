@@ -160,6 +160,10 @@ function breadthFirstSearch(polygon, callback, options) {
 		if(typeof nodeObject === 'undefined' || nodeObject.distance === range)
 			return neighborsAdded;
 		
+		if((nodeObject.gridX + nodeObject.gridY) % 2 === 0) {
+			dirs.reverse();
+		}
+		
 		for(d = 0; d < dirs.length; d++) {
 			dirCurrent = dirs[d];
 			if(Node.testSpace(nodeObject.x+dirCurrent[0]*nodeSize, nodeObject.y+dirCurrent[1]*nodeSize, nodeObject.gridX+dirCurrent[0], nodeObject.gridY+dirCurrent[1])) {

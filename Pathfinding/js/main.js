@@ -65,9 +65,8 @@ window.onload = function() {
 			spatialHash.insert(obstacleRectsArr[r].x, obstacleRectsArr[r].y, obstacleRectsArr[r].width, obstacleRectsArr[r].height, obstacleRectsArr[r]);
 		}
 		
-		//nodes = breadthFirstSearch({x: mousePosition.x-25/2, y: mousePosition.y-25/2, width: 25, height: 25}, undefined, {
-		nodes = breadthFirstSearch({x: $(window).width()/2, y: $(window).height()/2, width: 25, height: 25}, undefined, {
-			range: 15,
+		nodes = breadthFirstSearch({x: mousePosition.x-25/2, y: mousePosition.y-25/2, width: 25, height: 25}, undefined, {
+			range: 50,
 			nodeTest: function(x, y, size) {
 				var results = spatialHash.retrieve(x+size/2, y+size/2, size, size);
 				var r = 0;
