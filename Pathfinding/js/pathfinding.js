@@ -20,10 +20,8 @@ function breadthFirstSearch(polygon, callback, options) {
 	var nodeCallback;
 	var nodeTest;
 	var range;
-	var finished = false;
 	var targetX;
 	var targetY;
-	var needsFinish = false;
 	var startNode;
 	var nextNodes = [];
 	
@@ -156,37 +154,43 @@ function breadthFirstSearch(polygon, callback, options) {
 		var d = 0;
 		var neighborsAdded = [];
 		var nodeObjectNew;
+		var xNext;
+		var	yNext;
+		var gridXNext;
+		var gridYNext;
 		
 		if(typeof nodeObject === 'undefined' || nodeObject.distance === range)
-			return neighborsAdded;
+			return;
 		
 		if((nodeObject.gridX + nodeObject.gridY) % 2 === 0) {
 			dirs.reverse();
+			arrows.reverse();
 		}
 		
 		for(d = 0; d < dirs.length; d++) {
 			dirCurrent = dirs[d];
-			if(Node.testSpace(nodeObject.x+dirCurrent[0]*nodeSize, nodeObject.y+dirCurrent[1]*nodeSize, nodeObject.gridX+dirCurrent[0], nodeObject.gridY+dirCurrent[1])) {
+			xNext = nodeObject.x+dirCurrent[0]*nodeSize;
+			yNext = nodeObject.y+dirCurrent[1]*nodeSize;
+			gridXNext = nodeObject.gridX+dirCurrent[0];
+			gridYNext = nodeObject.gridY+dirCurrent[1];
+			
+			if(Node.testSpace(xNext, yNext, gridXNext, gridYNext)) {
 				nodeObjectNew = Node.addToGrid({
 					distance: nodeObject.distance+1,
-					x: nodeObject.x+dirCurrent[0]*nodeSize,
-					y: nodeObject.y+dirCurrent[1]*nodeSize,
-					gridX: nodeObject.gridX+dirCurrent[0],
-					gridY: nodeObject.gridY+dirCurrent[1],
+					x: xNext,
+					y: yNext,
+					gridX: gridXNext,
+					gridY: gridYNext,
 					size: nodeSize,
 					origin: nodeObject,
 					arrow: arrows[d],
 					visited: false
 				});
-				//nodeCallback(nodeObjectNew);
+
 				nextNodes.push(nodeObjectNew);
-				if(typeof nodeObjectNew !== 'undefined') {
-					neighborsAdded.push(nodeObjectNew);
-				}
 			}
 			nodeObjectNew = undefined;
 		}
-		return neighborsAdded;
 		
 	};
 	
@@ -195,7 +199,6 @@ function breadthFirstSearch(polygon, callback, options) {
 	(function() {
 		
 		var nextNode;
-		var nextNeighbors;
 		var startNode = {
 			x: x,
 			y: y,
@@ -214,8 +217,6 @@ function breadthFirstSearch(polygon, callback, options) {
 			while(nextNodes.length > 0) {
 				nextNode = nextNodes.shift();
 				Node.createNeighbors(nextNode);
-				//console.log(nextNode.distance, range,  nextNodes.length, nextNeighbors.length);
-				//nextNodes = nextNodes.concat(nextNeighbors);
 			
 			}
 		}
