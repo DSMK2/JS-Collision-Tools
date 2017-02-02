@@ -117,7 +117,7 @@ window.onload = function() {
 			context.fill();
 			context.stroke();
 			context.fillStyle= '#000000';
-			context.fillText(node.distance + ' ' + node.arrow, node.x, node.y+node.size/2);
+			context.fillText(node.cost + ' ' + node.arrow, node.x, node.y+node.size/2);
 			context.closePath();
 
 		}

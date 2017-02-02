@@ -22,8 +22,12 @@ function breadthFirstSearch(polygon, callback, options) {
 	var range;
 	var targetX;
 	var targetY;
+	var currentGridX = 0;
+	var currentGridY = 0;
 	var startNode;
 	var nextNodes = [];
+	var needsExit = false;
+	var costSoFar = 0;
 	
 	function extend(defaults, options) {
 		var prop,
@@ -72,7 +76,7 @@ function breadthFirstSearch(polygon, callback, options) {
 			gridX: Rounded x coordinate
 			gridY: Rounded y coordinate
 			size: node size
-			distance: distance from starting position (gridwise)
+			cost: distance from starting position (gridwise) with added weights
 			origin: Origin of node
 		}
 	*/
@@ -85,7 +89,6 @@ function breadthFirstSearch(polygon, callback, options) {
 	* @description Tests a given (grid) space to see if it is available for a node
 	* @params {number} x - x coordinate of grid position
 	* @params {number} y - y coordinate of grid position
-	* @param {number} [distance] - Optional value that forces true if overriding with a node of lower distance is allowed
 	* @returns {boolean} - True if node has available space, false otherwise
 	*/
 	Node.testSpace = function (x, y, gridX, gridY) {
@@ -99,8 +102,11 @@ function breadthFirstSearch(polygon, callback, options) {
 				result = nodeTest(x, y, nodeSize);
 			}
 		}
-
-		//console.log('filled', node.grid[x][y], x, y);
+		
+		// Reaching target triggers early exit
+		if(gridX === Math.round(targetX) && gridY === Math.round(targetY))
+			needsExit = true;
+		
 		return result;
 		
 	};
@@ -122,17 +128,27 @@ function breadthFirstSearch(polygon, callback, options) {
 	
 	Node.pathToTarget = function() {
 		var currentNode;
+		var dirs = [
+			[0, -1], // up
+			[1, 0], // right
+			[0, 1],  // Down
+			[-1, 0]	// left
+		];
 		
 		if(typeof Node.grid[Math.round(targetX) + '_' + Math.round(targetY)] === 'undefined')
 			return;
-			
-		currentNode = Node.grid[Math.round(targetX) + '_' + Math.round(targetY)];
+		
+		currentGridX = Math.round(targetX);
+		currentGridY = Math.round(targetY);
+		
+		currentNode = Node.grid[currentGridX + '_' + currentGridY];
 		currentNode.visited = true;
 		
 		while(currentNode !== startNode && typeof currentNode.origin !== 'undefined') {
 			
 			currentNode = currentNode.origin;
 			currentNode.visited = true;
+			costSoFar += currentNode.cost;
 		}
 	
 	};
@@ -159,7 +175,7 @@ function breadthFirstSearch(polygon, callback, options) {
 		var gridXNext;
 		var gridYNext;
 		
-		if(typeof nodeObject === 'undefined' || nodeObject.distance === range)
+		if(typeof nodeObject === 'undefined' || nodeObject.cost === range)
 			return;
 		
 		if((nodeObject.gridX + nodeObject.gridY) % 2 === 0) {
@@ -168,6 +184,11 @@ function breadthFirstSearch(polygon, callback, options) {
 		}
 		
 		for(d = 0; d < dirs.length; d++) {
+			// Early Exit
+			if(needsExit)
+				break;
+		
+		
 			dirCurrent = dirs[d];
 			xNext = nodeObject.x+dirCurrent[0]*nodeSize;
 			yNext = nodeObject.y+dirCurrent[1]*nodeSize;
@@ -176,7 +197,7 @@ function breadthFirstSearch(polygon, callback, options) {
 			
 			if(Node.testSpace(xNext, yNext, gridXNext, gridYNext)) {
 				nodeObjectNew = Node.addToGrid({
-					distance: nodeObject.distance+1,
+					cost: nodeObject.cost+1,
 					x: xNext,
 					y: yNext,
 					gridX: gridXNext,
@@ -186,8 +207,10 @@ function breadthFirstSearch(polygon, callback, options) {
 					arrow: arrows[d],
 					visited: false
 				});
-
-				nextNodes.push(nodeObjectNew);
+				
+				if(typeof nodeObjectNew !== 'undefined') {
+					nextNodes.push(nodeObjectNew);
+				}
 			}
 			nodeObjectNew = undefined;
 		}
@@ -205,7 +228,7 @@ function breadthFirstSearch(polygon, callback, options) {
 			gridX: Math.round(x/nodeSize),
 			gridY: Math.round(y/nodeSize),
 			size: nodeSize,
-			distance: 0,
+			cost: 0,
 			origin: undefined,
 			arrow: '*'
 		};
@@ -214,7 +237,8 @@ function breadthFirstSearch(polygon, callback, options) {
 			Node.addToGrid(startNode);
 			Node.createNeighbors(startNode);
 		
-			while(nextNodes.length > 0) {
+			while(nextNodes.length > 0 && !needsExit) {
+			
 				nextNode = nextNodes.shift();
 				Node.createNeighbors(nextNode);
 			
