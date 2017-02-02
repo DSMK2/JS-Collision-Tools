@@ -98,9 +98,8 @@ function breadthFirstSearch(polygon, callback, options) {
 			result = true;
 
 		if(result) {
-			if(typeof nodeTest === 'function') {
+			if(typeof nodeTest === 'function')
 				result = nodeTest(x, y, nodeSize);
-			}
 		}
 		
 		// Reaching target triggers early exit
@@ -134,6 +133,13 @@ function breadthFirstSearch(polygon, callback, options) {
 			[0, 1],  // Down
 			[-1, 0]	// left
 		];
+		var d = 0;
+		var tempNextGridX;
+		var tempNextGridY;
+		var nextGrid;
+		var nextNode;
+		var minCost;
+		
 		
 		if(typeof Node.grid[Math.round(targetX) + '_' + Math.round(targetY)] === 'undefined')
 			return;
@@ -143,12 +149,34 @@ function breadthFirstSearch(polygon, callback, options) {
 		
 		currentNode = Node.grid[currentGridX + '_' + currentGridY];
 		currentNode.visited = true;
+		costSoFar += currentNode.cost;
 		
 		while(currentNode !== startNode && typeof currentNode.origin !== 'undefined') {
 			
-			currentNode = currentNode.origin;
-			currentNode.visited = true;
-			costSoFar += currentNode.cost;
+			for(var d = 0; d < dirs.length; d++) {
+				tempNextGridX = currentGridX+dirs[d][0];
+				tempNextGridY = currentGridY+dirs[d][1];
+				nextGrid = tempNextGridX + '_' + tempNextGridY;
+				
+				/* Pick next node based on distance */
+				if(typeof Node.grid[nextGrid] !== 'undefined') {
+					if(typeof minCost === 'undefined' || minCost > Node.grid[nextGrid].cost) {
+						minCost = Node.grid[nextGrid].cost;
+						nextNode = Node.grid[nextGrid];
+						nextGridX = tempNextGridX;
+						nextGridY = tempNextGridY;
+					}
+				}
+			}
+			
+			if(typeof nextNode !== 'undefined') {
+				currentNode = nextNode;
+				currentNode.visited = true;
+				costSoFar += minCost;
+				currentGridX = nextGridX;
+				currentGridY = nextGridY;
+			} else
+				break;
 		}
 	
 	};
@@ -174,6 +202,7 @@ function breadthFirstSearch(polygon, callback, options) {
 		var	yNext;
 		var gridXNext;
 		var gridYNext;
+		var testSpaceValue;
 		
 		if(typeof nodeObject === 'undefined' || nodeObject.cost === range)
 			return;
@@ -195,9 +224,12 @@ function breadthFirstSearch(polygon, callback, options) {
 			gridXNext = nodeObject.gridX+dirCurrent[0];
 			gridYNext = nodeObject.gridY+dirCurrent[1];
 			
-			if(Node.testSpace(xNext, yNext, gridXNext, gridYNext)) {
+			testSpaceValue = Node.testSpace(xNext, yNext, gridXNext, gridYNext);
+			
+			if(testSpaceValue) {
 				nodeObjectNew = Node.addToGrid({
-					cost: nodeObject.cost+1,
+					cost: nodeObject.cost + (typeof testSpaceValue === 'number' ? testSpaceValue : 1),
+					costOffset: typeof testSpaceValue === 'number' ? testSpaceValue : 0,
 					x: xNext,
 					y: yNext,
 					gridX: gridXNext,
@@ -229,6 +261,7 @@ function breadthFirstSearch(polygon, callback, options) {
 			gridY: Math.round(y/nodeSize),
 			size: nodeSize,
 			cost: 0,
+			costOffset: 0,
 			origin: undefined,
 			arrow: '*'
 		};

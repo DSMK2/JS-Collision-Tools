@@ -20,12 +20,13 @@ window.onload = function() {
 	context.canvas.height = canvas.clientHeight;
 	
 	// BEGIN: Obstacle Rects
-	function obstacleRects(x, y, width, height) {
+	function obstacleRects(x, y, width, height, cost) {
 		
 		this.x = x;
 		this.y = y;
 		this.width = width;
 		this.height = height;
+		this.cost = typeof cost !== 'undefined' ? cost : undefined;
 	}
 	
 	obstacleRects.prototype = {
@@ -40,12 +41,9 @@ window.onload = function() {
 	}
 	target = new obstacleRects(800, 300, 25, 25);
 	obstacleRectsArr.push(new obstacleRects(200, 90, 100, 150));
-	obstacleRectsArr.push(new obstacleRects(600, 200, 150, 100));
+	obstacleRectsArr.push(new obstacleRects(600, 200, 150, 100, 5));
 	//obstacleRectsArr.push(target);
 	
-	
-	
-
 	// END: Obstacle Rects
 	
 	events : {
@@ -54,7 +52,6 @@ window.onload = function() {
 			mousePosition.y = e.clientY-$(canvas).offset().top;
 		});
 	}
-	
 	
 	function update() {
 		var r = 0;
@@ -69,18 +66,25 @@ window.onload = function() {
 			range: 50,
 			nodeTest: function(x, y, size) {
 				var results = spatialHash.retrieve(x+size/2, y+size/2, size, size);
+				var testObject;
 				var r = 0;
 				var hit = false;
-
+				var hitCount = 0;
+				
 				for(r = 0; r < results.length; r++) {
+					testObject = results[r];
 					
-					if(!hit)
-						hit = AABB({x: x+size/2, y: y+size/2, width: size, height: size}, results[r]);
+					if(!hit) {
+						hit = AABB({x: x+size/2, y: y+size/2, width: size, height: size}, testObject);
 						
+						if(hit && typeof testObject.cost !== 'undefined')
+							hit = testObject.cost
+					}
+					
 					if(hit) break;
 				}
 
-				return !hit;
+				return (typeof hit === 'number' ? hit : !hit);
 				
 			},
 			targetPosition: {x: 800, y: 300}
@@ -112,7 +116,7 @@ window.onload = function() {
 			context.rect(node.x, node.y, node.size, node.size);
 			
 			context.stokeStyle='#000000';
-			context.fillStyle= node.visited ? '#ffae00' : '#999999';
+			context.fillStyle= node.visited ? '#ffae00' : (node.costOffset !== 0 ? '#00ff00' : '#999999');
 			
 			context.fill();
 			context.stroke();
