@@ -46,6 +46,43 @@ window.onload = function() {
 	
 	// END: Obstacle Rects
 	
+	// BEGIN: Grid
+	function GridNode (x, y, size, cost) {
+		
+	}
+	
+	GridNode.colors = [
+		'#c3a55d',
+		'#734807',
+		'#bd593d'
+	]
+	
+	GridNode.prototype = {
+		render: function() {
+		}
+	};
+	
+	// build a grid starting from the top left corner of the screen
+	function Grid (size, costRange) {
+		var x = 0;
+		var y = 0;
+		var xMax = Math.round(window.clientWidth/size);
+		var yMax = Math.round(window.clientHeight/size);
+		var cost;
+		
+		for(x = 0; x < xMax; x++) {
+			for(y = 0; y < yMax; y++) {
+				cost = Math.round(costRange*Math.random());
+				Grid.node[x + '_' + y] = new GridNode(x*size, y*size, size, cost);
+			} 
+		}
+	}
+	
+	Grid.node = {};
+	
+	 
+	// END: Grid
+	
 	events : {
 		$(window).on('mousemove', function(e) {
 			mousePosition.x = e.clientX-$(canvas).offset().left;
