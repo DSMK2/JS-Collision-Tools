@@ -145,7 +145,7 @@ window.onload = function() {
 	
 	imageData = context.createImageData(width, height);
 	
-	grid = valueNoise(width, height, 4);
+	grid = valueNoise(width, height, 1);
 	
 	function redraw() {
 		
