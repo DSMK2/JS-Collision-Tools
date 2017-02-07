@@ -1,6 +1,151 @@
+// SEE: http://pages.cs.wisc.edu/~vernon/cs367/notes/11.PRIORITY-Q.html
+// Max heap implementation
+function PriorityQueue(elements, options) {
+	var i = 0;
+	var defaults = {
+		isMin: false
+	};
+	
+	function extend(defaults, options) {
+		var prop,
+		result = {};
+		
+		if(typeof options === 'undefined')
+			return defaults;
+		
+		for(prop in defaults) {
+			if(options.hasOwnProperty(prop))
+				result[prop] = options[prop];
+			else 
+				result[prop] = defaults[prop];
+		}
+		
+		return result;
+	}
+	
+	options = extend(defaults, options);
+	
+	this.queueArray = ['']; // Empty element so root is one
+	this.isMin = options.isMin;
+	
+	for(i = 0; i < elements.length; i++) {
+		this.insert(elements[i], elements.length-1-i);
+	}
+	
+	return this;
+}
+
+PriorityQueue.prototype = {
+	swap: function (target, destination) {
+		var temp = this.queueArray[destination];
+		
+		if(typeof this.queueArray[destination] === 'undefined' || typeof this.queueArray[target] === 'undefined')
+			return;
+			
+		this.queueArray[destination] = this.queueArray[target];
+		this.queueArray[target] = temp;
+	},
+	queueHelper: function(index) {
+		var parentIndex = ~~(index/2);
+		
+		if(index == 1 || parentIndex <= 1)
+			return index;
+				
+		if(typeof this.queueArray[parentIndex] === 'undefined' || typeof this.queueArray[index] === 'undefined')
+			return index;
+		
+		if(this.isMin ? this.queueArray[parentIndex].priority > this.queueArray[index].priority : this.queueArray[parentIndex].priority < this.queueArray[index].priority)
+			this.swap(index, parentIndex);
+		else
+			return index; 
+			
+		// Run until at root (index 1) node	
+		this.queueHelper(parentIndex);
+	},
+	queue: function (value, priority) {
+		this.queueArray.push({value: value, priority: priority});
+		this.queueHelper(this.queueArray.length-1);
+	},
+	dequeueHelper: function(index) {
+		var leftIndex;
+		var rightIndex;
+		var leftElement;
+		var rightElement;
+		
+		if(typeof index === 'undefined')
+			index = 1;
+			
+		leftIndex = index * 2;
+		rightIndex = index * 2 + 1;
+				
+		if(typeof this.queueArray[leftIndex] !== 'undefined') {
+			if(this.isMin ? this.queueArray[leftIndex].priority < this.queueArray[index].priority : this.queueArray[leftIndex].priority > this.queueArray[index].priority)
+				leftElement = this.queueArray[leftIndex];
+		} 
+		
+		if (typeof this.queueArray[rightIndex] !== 'undefined') {
+			if(this.isMin ? this.queueArray[rightIndex].priority < this.queueArray[index].priority : this.queueArray[rightIndex].priority > this.queueArray[index].priority)
+				rightElement = this.queueArray[rightIndex];
+		}
+				
+		// Run until there are no more left/right leafs
+		if(typeof leftElement  === 'undefined' && typeof rightElement === 'undefined')
+			return;
+				
+		if(typeof leftElement === 'undefined' && typeof rightElement !== 'undefined') {
+				this.swap(leftIndex, index);
+				this.dequeueHelper(leftIndex);
+		}
+		else if(typeof leftElement !== 'undefined' && typeof rightElement === 'undefined') {
+			this.swap(rightIndex, index);
+			this.dequeueHelper(rightIndex);
+		} else {		
+			if(this.isMin) {
+			
+				if (leftElement.priority < rightElement.priority) {
+					this.swap(leftIndex, index);
+					this.dequeueHelper(leftIndex);
+				} else if (leftElement.priority >= rightElement.priority) {
+					this.swap(rightIndex, index);
+					this.dequeueHelper(rightIndex);
+				}
+			} else {
+				if (leftElement.priority > rightElement.priority) {
+					this.swap(leftIndex, index);
+					this.dequeueHelper(leftIndex);
+				} else if (leftElement.priority <= rightElement.priority) {
+					this.swap(rightIndex, index);
+					this.dequeueHelper(rightIndex);
+				}
+			}
+		}
+	},
+	dequeue: function() {
+		var result;
+		var _this = this;
+		
+		if(this.queueArray.length === 0)
+			return;
+		
+		this.swap(1, this.queueArray.length-1);
+		result = this.queueArray.splice(this.queueArray.length-1);
+		this.dequeueHelper();
+		
+		if(result.length !== 0) {
+			return result[0].value;
+		} else
+			return;
+	},
+	isEmpty: function() {
+		return this.queueArray.length === 0;
+	}
+	
+};
+
 // Provide a destination, create a grid from that destination I guess
 // Should be used with some sort of broad phase collision checking via callback
 // See http://www.redblobgames.com/pathfinding/a-star/introduction.html
+// Todo: Implement Heap structure + Priority Queue
 function breadthFirstSearch(polygon, callback, options) {
 	var defaults = {
 		xMin: undefined,
@@ -25,7 +170,7 @@ function breadthFirstSearch(polygon, callback, options) {
 	var currentGridX = 0;
 	var currentGridY = 0;
 	var startNode;
-	var nextNodes = [];
+	var nextNodes = new PriorityQueue([], {isMin: true});
 	var needsExit = false;
 	var costSoFar = 0;
 	
@@ -45,6 +190,7 @@ function breadthFirstSearch(polygon, callback, options) {
 		
 		return result;
 	}
+	
 	if(typeof polygon === 'undefined')
 		return;
 	
@@ -136,6 +282,8 @@ function breadthFirstSearch(polygon, callback, options) {
 		var d = 0;
 		var tempNextGridX;
 		var tempNextGridY;
+		var nextGridX;
+		var nextGridY;
 		var nextGrid;
 		var nextNode;
 		var minCost;		
@@ -152,10 +300,7 @@ function breadthFirstSearch(polygon, callback, options) {
 		
 		while(currentNode !== startNode && typeof currentNode.origin !== 'undefined') {
 			
-			minDistance = undefined;
-			//minCost = undefined;
-			
-			for(var d = 0; d < dirs.length; d++) {
+			for(d = 0; d < dirs.length; d++) {
 				tempNextGridX = currentGridX+dirs[d][0];
 				tempNextGridY = currentGridY+dirs[d][1];
 				nextGrid = tempNextGridX + '_' + tempNextGridY;
@@ -252,7 +397,11 @@ function breadthFirstSearch(polygon, callback, options) {
 				});
 				
 				if(typeof nodeObjectNew !== 'undefined') {
-					nextNodes.push(nodeObjectNew);
+					nextNodes.queue(
+						nodeObjectNew, 
+						getDistance({x: Math.round(targetX), y: Math.round(targetY)}, 
+						{x: gridXNext, y: gridYNext}
+					));
 				}
 			}
 			nodeObjectNew = undefined;
@@ -281,9 +430,9 @@ function breadthFirstSearch(polygon, callback, options) {
 			Node.addToGrid(startNode);
 			Node.createNeighbors(startNode);
 		
-			while(nextNodes.length > 0 && !needsExit) {
+			while(!nextNodes.isEmpty() && !needsExit) {
 			
-				nextNode = nextNodes.shift();
+				nextNode = nextNodes.dequeue();
 				Node.createNeighbors(nextNode);
 			
 			}

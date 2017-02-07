@@ -87,7 +87,7 @@ window.onload = function() {
 		
 		for(x = 0; x < xMax; x++) {
 			for(y = 0; y < yMax; y++) {
-				cost = 1 + Math.round(4 * Math.abs(simplex.noise2D(x/16, y/16)));
+				cost = 1 + Math.round(4 * Math.abs(simplex.noise2D(x/8, y/8)));
 				Grid.node[x + '_' + y] = new GridNode(x*size, y*size, size, cost);
 			} 
 		}
@@ -95,7 +95,7 @@ window.onload = function() {
 	
 	Grid.node = {};
 	
-	var grid = new Grid(50);
+	var grid = new Grid(25);
 	// END: Grid
 	
 	events : {
@@ -117,10 +117,10 @@ window.onload = function() {
 			}
 		}		
 		
-		nodes = breadthFirstSearch({x: Math.round((mousePosition.x-50/2)/50)*50, y: Math.round((mousePosition.y-50/2)/50)*50, width:50, height: 50}, undefined, {
+		nodes = breadthFirstSearch({x: Math.round((mousePosition.x-25/2)/25)*25, y: Math.round((mousePosition.y-25/2)/25)*25, width:25, height: 25}, undefined, {
 			range: 100,
 			nodeTest: function(x, y, gridX, gridY, size) {
-				var results = spatialHash.retrieve(x+50/2, y+50/2, 50, 50);
+				var results = spatialHash.retrieve(x+25/2, y+25/2, 25, 25);
 				var testObject;
 				var r = 0;
 				var hit = false;
@@ -175,6 +175,7 @@ window.onload = function() {
 			}
 		}		
 		
+		context.globalAlpha = 0.6;
 		for(prop in nodes) {
 
 			node = nodes[prop];
@@ -183,7 +184,7 @@ window.onload = function() {
 			context.rect(node.x, node.y, node.size, node.size);
 			
 			context.stokeStyle='#000000';
-			context.fillStyle= node.visited ? '#ffae00' : (node.costOffset !== 0 ? '#00ff00' : '#999999');
+			context.fillStyle= node.visited ? '#transparent' : (node.costOffset !== 0 ? '#821313' : '#999999');
 			
 			context.fill();
 			context.stroke();
@@ -192,6 +193,7 @@ window.onload = function() {
 			context.closePath();
 
 		}
+		context.globalAlpha = 1;
 		
 		
 		
