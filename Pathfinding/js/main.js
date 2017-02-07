@@ -175,7 +175,7 @@ window.onload = function() {
 			}
 		}		
 		
-		context.globalAlpha = 0.6;
+		context.globalAlpha = 0.5;
 		for(prop in nodes) {
 
 			node = nodes[prop];
@@ -184,12 +184,12 @@ window.onload = function() {
 			context.rect(node.x, node.y, node.size, node.size);
 			
 			context.stokeStyle='#000000';
-			context.fillStyle= node.visited ? '#transparent' : (node.costOffset !== 0 ? '#821313' : '#999999');
+			context.fillStyle= node.visited ? '#ffffff' : (node.costOffset !== 0 ? '#821313' : '#999999');
 			
 			context.fill();
 			context.stroke();
 			context.fillStyle= '#000000';
-			context.fillText(node.cost + ' ' + node.arrow, node.x, node.y+node.size/2);
+			//context.fillText(node.cost + ' ' + node.arrow, node.x, node.y+node.size/2);
 			context.closePath();
 
 		}

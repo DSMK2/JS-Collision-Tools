@@ -353,10 +353,6 @@ function breadthFirstSearch(polygon, callback, options) {
 		var gridYNext;
 		var testSpaceValue;
 		
-		function getDistance(a, b) {
-			return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
-		}
-		
 		if(typeof nodeObject === 'undefined' || nodeObject.cost >= range)
 			return;
 		
