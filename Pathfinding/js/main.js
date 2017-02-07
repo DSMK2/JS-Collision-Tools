@@ -15,6 +15,7 @@ window.onload = function() {
 	var nodes;
 	var spatialHash = new SpatialHash(50, 50);
 	var target;
+	var simplex = new SimplexNoise();
 	
 	context.canvas.width  = canvas.clientWidth;
 	context.canvas.height = canvas.clientHeight;
@@ -66,21 +67,25 @@ window.onload = function() {
 	function Grid (size, costRange) {
 		var x = 0;
 		var y = 0;
-		var xMax = Math.round(window.clientWidth/size);
-		var yMax = Math.round(window.clientHeight/size);
+		var xMax = Math.round(window.innerWidth/size);
+		var yMax = Math.round(window.innerHeight/size);
 		var cost;
+		
+		console.log(xMax, yMax);
 		
 		for(x = 0; x < xMax; x++) {
 			for(y = 0; y < yMax; y++) {
-				cost = Math.round(costRange*Math.random());
+				cost = Math.round(3*simplex.noise2D(x, y));
 				Grid.node[x + '_' + y] = new GridNode(x*size, y*size, size, cost);
 			} 
 		}
+		
+		console.log(Grid.node);
 	}
 	
 	Grid.node = {};
 	
-	 
+	var grid = new Grid(25);
 	// END: Grid
 	
 	events : {
@@ -93,6 +98,7 @@ window.onload = function() {
 	function update() {
 		var r = 0;
 		
+		/*
 		spatialHash.clear();
 	
 		for(r = 0; r < obstacleRectsArr.length; r++) {
@@ -126,7 +132,7 @@ window.onload = function() {
 			},
 			targetPosition: {x: 800, y: 300}
 		});
-		//redraw();
+		*/
 
 	}
 	
@@ -144,7 +150,7 @@ window.onload = function() {
 		}
 
 		
-
+		/*
 		for(prop in nodes) {
 
 			node = nodes[prop];
@@ -162,6 +168,7 @@ window.onload = function() {
 			context.closePath();
 
 		}
+		*/
 
 
 
