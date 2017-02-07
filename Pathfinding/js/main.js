@@ -49,17 +49,29 @@ window.onload = function() {
 	
 	// BEGIN: Grid
 	function GridNode (x, y, size, cost) {
-		
+		this.x = x;
+		this.y = y;
+		this.size = size,
+		this.cost = cost;	
 	}
 	
-	GridNode.colors = [
-		'#c3a55d',
-		'#734807',
-		'#bd593d'
-	]
-	
 	GridNode.prototype = {
-		render: function() {
+		redraw: function(context) {
+			var color = Math.round(150 * this.cost/5);
+			
+			if(typeof context === 'undefined')
+				return;
+			
+			context.beginPath();
+			context.rect(this.x, this.y, this.size, this.size);
+			context.fillStyle = 'rgb(' + 0 + ', ' + color + ', ' + 0 + ')';
+			context.strokeStyle = 'black';
+			
+			context.fill();
+			context.stroke();
+			context.fillStyle = 'black';
+			context.fillText(this.cost, this.x + this.size/2, this.y + this.size/2);
+			context.closePath();			
 		}
 	};
 	
@@ -75,17 +87,15 @@ window.onload = function() {
 		
 		for(x = 0; x < xMax; x++) {
 			for(y = 0; y < yMax; y++) {
-				cost = Math.round(3*simplex.noise2D(x, y));
+				cost = 1 + Math.round(4 * Math.abs(simplex.noise2D(x/16, y/16)));
 				Grid.node[x + '_' + y] = new GridNode(x*size, y*size, size, cost);
 			} 
 		}
-		
-		console.log(Grid.node);
 	}
 	
 	Grid.node = {};
 	
-	var grid = new Grid(25);
+	var grid = new Grid(50);
 	// END: Grid
 	
 	events : {
@@ -97,42 +107,50 @@ window.onload = function() {
 	
 	function update() {
 		var r = 0;
+		var prop;
 		
-		/*
 		spatialHash.clear();
 	
-		for(r = 0; r < obstacleRectsArr.length; r++) {
-			spatialHash.insert(obstacleRectsArr[r].x, obstacleRectsArr[r].y, obstacleRectsArr[r].width, obstacleRectsArr[r].height, obstacleRectsArr[r]);
-		}
+		for(prop in Grid.node) {
+			if(Grid.node.hasOwnProperty(prop)) {
+				spatialHash.insert(Grid.node[prop].x, Grid.node[prop].y, Grid.node[prop].size, Grid.node[prop].size, Grid.node[prop]);
+			}
+		}		
 		
-		nodes = breadthFirstSearch({x: mousePosition.x-25/2, y: mousePosition.y-25/2, width: 25, height: 25}, undefined, {
-			range: 50,
-			nodeTest: function(x, y, size) {
-				var results = spatialHash.retrieve(x+size/2, y+size/2, size, size);
+		nodes = breadthFirstSearch({x: Math.round((mousePosition.x-50/2)/50)*50, y: Math.round((mousePosition.y-50/2)/50)*50, width:50, height: 50}, undefined, {
+			range: 100,
+			nodeTest: function(x, y, gridX, gridY, size) {
+				var results = spatialHash.retrieve(x+50/2, y+50/2, 50, 50);
 				var testObject;
 				var r = 0;
 				var hit = false;
 				var hitCount = 0;
 				
+				if(typeof Grid.node[gridX + '_' + gridY] !== 'undefined') {
+					return Grid.node[gridX + '_' + gridY].cost;
+				}
+				/*
 				for(r = 0; r < results.length; r++) {
 					testObject = results[r];
 					
 					if(!hit) {
-						hit = AABB({x: x+size/2, y: y+size/2, width: size, height: size}, testObject);
+						hit = AABB({x: x, y: y, width: 50, height: 50}, testObject);
 						
 						if(hit && typeof testObject.cost !== 'undefined')
-							hit = testObject.cost
+							hit = testObject.cost;
 					}
-					
+
 					if(hit) break;
 				}
 
 				return (typeof hit === 'number' ? hit : !hit);
+				*/
+				return !hit;
 				
 			},
 			targetPosition: {x: 800, y: 300}
 		});
-		*/
+
 
 	}
 	
@@ -145,12 +163,18 @@ window.onload = function() {
 		
 		context.clearRect(0, 0, context.canvas.width, context.canvas.height);
 		
+		/*
 		for(o = 0; o < obstacleRectsArr.length; o++) {
 			obstacleRectsArr[o].redraw();
 		}
+		*/
 
+		for(prop in Grid.node) {
+			if(Grid.node.hasOwnProperty(prop)) {
+				Grid.node[prop].redraw(context);
+			}
+		}		
 		
-		/*
 		for(prop in nodes) {
 
 			node = nodes[prop];
@@ -168,8 +192,10 @@ window.onload = function() {
 			context.closePath();
 
 		}
-		*/
-
+		
+		
+		
+		
 
 
 		target.redraw();

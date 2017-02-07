@@ -99,7 +99,7 @@ function breadthFirstSearch(polygon, callback, options) {
 
 		if(result) {
 			if(typeof nodeTest === 'function')
-				result = nodeTest(x, y, nodeSize);
+				result = nodeTest(x, y, gridX, gridY, nodeSize);
 		}
 		
 		// Reaching target triggers early exit
@@ -138,8 +138,7 @@ function breadthFirstSearch(polygon, callback, options) {
 		var tempNextGridY;
 		var nextGrid;
 		var nextNode;
-		var minCost;
-		
+		var minCost;		
 		
 		if(typeof Node.grid[Math.round(targetX) + '_' + Math.round(targetY)] === 'undefined')
 			return;
@@ -153,14 +152,19 @@ function breadthFirstSearch(polygon, callback, options) {
 		
 		while(currentNode !== startNode && typeof currentNode.origin !== 'undefined') {
 			
+			minDistance = undefined;
+			//minCost = undefined;
+			
 			for(var d = 0; d < dirs.length; d++) {
 				tempNextGridX = currentGridX+dirs[d][0];
 				tempNextGridY = currentGridY+dirs[d][1];
 				nextGrid = tempNextGridX + '_' + tempNextGridY;
 				
+				
 				/* Pick next node based on distance */
 				if(typeof Node.grid[nextGrid] !== 'undefined') {
-					if(typeof minCost === 'undefined' || minCost > Node.grid[nextGrid].cost) {
+					if((typeof minCost === 'undefined' && typeof minDistance === 'undefined') || minCost >= Node.grid[nextGrid].cost) {
+						
 						minCost = Node.grid[nextGrid].cost;
 						nextNode = Node.grid[nextGrid];
 						nextGridX = tempNextGridX;
@@ -204,7 +208,11 @@ function breadthFirstSearch(polygon, callback, options) {
 		var gridYNext;
 		var testSpaceValue;
 		
-		if(typeof nodeObject === 'undefined' || nodeObject.cost === range)
+		function getDistance(a, b) {
+			return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+		}
+		
+		if(typeof nodeObject === 'undefined' || nodeObject.cost >= range)
 			return;
 		
 		if((nodeObject.gridX + nodeObject.gridY) % 2 === 0) {
@@ -225,6 +233,9 @@ function breadthFirstSearch(polygon, callback, options) {
 			gridYNext = nodeObject.gridY+dirCurrent[1];
 			
 			testSpaceValue = Node.testSpace(xNext, yNext, gridXNext, gridYNext);
+			
+			if(testSpaceValue + nodeObject.cost >= range)
+				return;
 			
 			if(testSpaceValue) {
 				nodeObjectNew = Node.addToGrid({
