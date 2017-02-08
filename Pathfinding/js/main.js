@@ -87,7 +87,9 @@ window.onload = function() {
 		
 		for(x = 0; x < xMax; x++) {
 			for(y = 0; y < yMax; y++) {
-				cost = 1 + Math.round(4 * Math.abs(simplex.noise2D(x/8, y/8)));
+				cost = Math.round(4 * Math.abs(simplex.noise2D(x/8, y/8)));
+				if(cost === 0)
+					cost = 999;
 				Grid.node[x + '_' + y] = new GridNode(x*size, y*size, size, cost);
 			} 
 		}
@@ -118,7 +120,7 @@ window.onload = function() {
 		}		
 		
 		nodes = breadthFirstSearch({x: Math.round((mousePosition.x-25/2)/25)*25, y: Math.round((mousePosition.y-25/2)/25)*25, width:25, height: 25}, undefined, {
-			range: 100,
+			range: 200,
 			nodeTest: function(x, y, gridX, gridY, size) {
 				var results = spatialHash.retrieve(x+25/2, y+25/2, 25, 25);
 				var testObject;

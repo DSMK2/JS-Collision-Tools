@@ -1,165 +1,3 @@
-// SEE: http://pages.cs.wisc.edu/~vernon/cs367/notes/11.PRIORITY-Q.html
-// Min/Max heap implementation
-function PriorityQueue() {
-	var i = 0;
-	var arguementProperty;
-	var argument;
-	var startingElements = [];
-	var options = {};
-	var defaults = {
-		isMin: false
-	};
-	
-	function extend(defaults, options) {
-		var prop,
-		result = {};
-		
-		if(typeof options === 'undefined')
-			return defaults;
-		
-		for(prop in defaults) {
-			if(options.hasOwnProperty(prop))
-				result[prop] = options[prop];
-			else 
-				result[prop] = defaults[prop];
-		}
-		
-		return result;
-	}
-	
-	for(arguementProperty in this.arguments) {
-		if(this.arguments.hasOwnProperty(arguementProperty)) {
-			argument = this.arguments[argumentProperty];
-			
-			if(typeof argument === 'object') {
-				if(argument instanceof Array)
-					startingElements = argument;
-				else
-					options = argument;
-			}
-		}
-	}
-	
-	options = extend(defaults, options);
-	
-	this.queueArray = ['']; // Empty element so root is one
-	this.isMin = options.isMin;
-	
-	// Automatically assign priority based on index
-	for(i = 0; i < elements.length; i++) {
-		this.insert(elements[i], elements.length-1-i);
-	}
-	
-	return this;
-}
-
-PriorityQueue.prototype = {
-	swap: function (target, destination) {
-		var temp = this.queueArray[destination];
-		
-		if(typeof this.queueArray[destination] === 'undefined' || typeof this.queueArray[target] === 'undefined')
-			return;
-			
-		this.queueArray[destination] = this.queueArray[target];
-		this.queueArray[target] = temp;
-	},
-	// Upwards traversal to balance the heap
-	queueHelper: function(index) {
-		var parentIndex = ~~(index/2);
-		
-		if(index == 1 || parentIndex <= 1 || index > this.queueArray.length || parentIndex > this.queueArray.length)
-			return index;
-		
-		if(this.isMin ? this.queueArray[parentIndex].priority > this.queueArray[index].priority : this.queueArray[parentIndex].priority < this.queueArray[index].priority)
-			this.swap(index, parentIndex);
-		else // Do nothing if priority is equal
-			return index; 
-			
-		// Run until at root (index 1) node	
-		this.queueHelper(parentIndex);
-	},
-	queue: function (value, priority) {
-		this.queueArray.push({value: value, priority: priority});
-		this.queueHelper(this.queueArray.length-1);
-	},
-	dequeueHelper: function(index) {
-		var leftIndex;
-		var rightIndex;
-		var leftElement;
-		var rightElement;
-		
-		if(typeof index === 'undefined')
-			index = 1;
-			
-		leftIndex = index * 2;
-		rightIndex = index * 2 + 1;
-				
-		if (leftIndex < this.queueArray.length && typeof this.queueArray[leftIndex] !== 'undefined') {
-			if(this.isMin ? this.queueArray[leftIndex].priority < this.queueArray[index].priority : this.queueArray[leftIndex].priority > this.queueArray[index].priority)
-				leftElement = this.queueArray[leftIndex];
-		} 
-		
-		if (rightIndex < this.queueArray.length && typeof this.queueArray[rightIndex] !== 'undefined') {
-			if(this.isMin ? this.queueArray[rightIndex].priority < this.queueArray[index].priority : this.queueArray[rightIndex].priority > this.queueArray[index].priority)
-				rightElement = this.queueArray[rightIndex];
-		}
-				
-		// Run until there are no more left/right leafs
-		if(typeof leftElement  === 'undefined' && typeof rightElement === 'undefined')
-			return;
-		
-		// If one or the other is undefined, use the one that has value		
-		if(typeof leftElement === 'undefined' && typeof rightElement !== 'undefined') {
-				this.swap(leftIndex, index);
-				this.dequeueHelper(leftIndex);
-		}
-		else if(typeof leftElement !== 'undefined' && typeof rightElement === 'undefined') {
-			this.swap(rightIndex, index);
-			this.dequeueHelper(rightIndex);
-		// If both are defined, use value based on priority 
-		} else {		
-			if(this.isMin) {
-			
-				if (leftElement.priority < rightElement.priority) {
-					this.swap(leftIndex, index);
-					this.dequeueHelper(leftIndex);
-				} else if (leftElement.priority >= rightElement.priority) {
-					this.swap(rightIndex, index);
-					this.dequeueHelper(rightIndex);
-				}
-			} else {
-				if (leftElement.priority > rightElement.priority) {
-					this.swap(leftIndex, index);
-					this.dequeueHelper(leftIndex);
-				} else if (leftElement.priority <= rightElement.priority) {
-					this.swap(rightIndex, index);
-					this.dequeueHelper(rightIndex);
-				}
-			}
-		}
-	},
-	dequeue: function() {
-		var result;
-		var _this = this;
-		
-		if(this.queueArray.length === 0)
-			return;
-		
-		this.swap(1, this.queueArray.length-1);
-		result = this.queueArray.splice(this.queueArray.length-1);
-		this.dequeueHelper();
-		
-		if(result.length !== 0) {
-			return result[0].value;
-		} else
-			return;
-	},
-	isEmpty: function() {
-		return this.queueArray.length === 0;
-	}
-	
-};
-
 // Provide a destination, create a grid from that destination I guess
 // Should be used with some sort of broad phase collision checking via callback
 // See http://www.redblobgames.com/pathfinding/a-star/introduction.html
@@ -188,10 +26,17 @@ function breadthFirstSearch(polygon, callback, options) {
 	var currentGridX = 0;
 	var currentGridY = 0;
 	var startNode;
-	var nextNodes = new PriorityQueue([], {isMin: true});
+	var nextNodes; // = new PriorityQueue({isMin: true});
 	var needsExit = false;
 	var costSoFar = 0;
 	
+	/**
+	* @function extend 
+	* @description Returns an object that has 'default' values overwritten by 'options', otherwise default values. Properties not found in defaults are skipped.
+	* @param {object} defaults - Object with the default values
+	* @param {object} options - Object with values
+	* @returns {object} - Object that has 'default' values overwritten by 'options', otherwise default values.
+	*/
 	function extend(defaults, options) {
 		var prop,
 		result = {};
@@ -209,9 +54,172 @@ function breadthFirstSearch(polygon, callback, options) {
 		return result;
 	}
 	
+	/**
+	* @function getDistance 
+	* @description Returns the Manhattan distance between two grid coordinates 
+	* @param {object} a - Object containing x, y grid values
+	* @param {object} b - Object containing x, y grid values
+	* @return {number} - Manhattan distance between two grid coordinates
+	*/
 	function getDistance(a, b) {
 		return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
 	}
+
+	/**
+	* @function PriorityQueue 
+	* @description A priority queue implementation where elements are ordered based on whether the queue is set to be a min/max queue
+	* @param {...Array} var_args - Array of starting elements, they will be prioritized based on index value
+	* @param {...boolean} var_args - Whether this is a min (true) or a max array (false/default);
+	* @see http://pages.cs.wisc.edu/~vernon/cs367/notes/11.PRIORITY-Q.html
+	*/
+	function PriorityQueue() {
+		var i = 0;
+		var arguementProperty;
+		var argument;
+		var startingElements = [];
+		var isMin;
+				
+		for(arguementProperty in arguments) {
+			if(arguments.hasOwnProperty(arguementProperty)) {
+				argument = arguments[arguementProperty];
+			
+				if(typeof argument === 'object' && argument instanceof Array)
+						startingElements = argument;
+				
+				if(typeof argument === 'boolean')
+					isMin = argument;
+			}
+		}
+
+		options = extend(defaults, options);
+	
+		this.queueArray = ['']; // Empty element so root is one
+		this.isMin = isMin;
+	
+		// Automatically assign priority based on index
+		for(i = 0; i < startingElements.length; i++) {
+			this.insert(startingElements[i], startingElements.length-1-i);
+		}
+	
+		return this;
+	}
+
+	PriorityQueue.prototype = {
+		/**
+		* @function PriorityQueue.prototype.swap
+		* @description Swaps value at destination with value at target
+		* @param {number} target - Target index to swap from
+		* @param {number} destination - Target index to swap to
+		*/
+		swap: function (target, destination) {
+			var temp;
+		
+			if(ypeof this.queueArray[destination] !== 'number' || typeof this.queueArray[target] !== 'number' || target >= this.queueArray.length || destination >= this.queueArray.length)
+				return;
+				
+			temp = this.queueArray[destination];
+			this.queueArray[destination] = this.queueArray[target];
+			this.queueArray[target] = temp;
+		},
+		/**
+		* @function PriorityQueue.prototype.queueHelper 
+		* @description Traverses up a the priority queue from an index, until the priority of the value at index doesn't satisfy min/max priority queue conditions
+		* @param {number} index - Index to traverse the priority queue upwards from
+		*/
+		queueHelper: function(index) {
+			var parentIndex = ~~(index/2);
+		
+			if(index == 1 || parentIndex <= 1 || index > this.queueArray.length || parentIndex > this.queueArray.length)
+				return;
+		
+			if(this.isMin ? this.queueArray[parentIndex].priority > this.queueArray[index].priority : this.queueArray[parentIndex].priority < this.queueArray[index].priority)
+				this.swap(index, parentIndex);
+			else // Do nothing if priority is equal
+				return; 
+			
+			// Run until at root (index 1) node	
+			this.queueHelper(parentIndex);
+		},
+		queue: function (value, priority) {
+			this.queueArray.push({value: value, priority: priority});
+			this.queueHelper(this.queueArray.length-1);
+		},
+		dequeueHelper: function(index) {
+			var leftIndex;
+			var rightIndex;
+			var leftElement;
+			var rightElement;
+		
+			if(typeof index === 'undefined')
+				index = 1;
+			
+			leftIndex = index * 2;
+			rightIndex = index * 2 + 1;
+				
+			if (leftIndex < this.queueArray.length && typeof this.queueArray[leftIndex] !== 'undefined') {
+				if(this.isMin ? this.queueArray[leftIndex].priority < this.queueArray[index].priority : this.queueArray[leftIndex].priority > this.queueArray[index].priority)
+					leftElement = this.queueArray[leftIndex];
+			} 
+		
+			if (rightIndex < this.queueArray.length && typeof this.queueArray[rightIndex] !== 'undefined') {
+				if(this.isMin ? this.queueArray[rightIndex].priority < this.queueArray[index].priority : this.queueArray[rightIndex].priority > this.queueArray[index].priority)
+					rightElement = this.queueArray[rightIndex];
+			}
+				
+			// Run until there are no more left/right leafs
+			if(typeof leftElement  === 'undefined' && typeof rightElement === 'undefined')
+				return;
+		
+			// If one or the other is undefined, use the one that has value		
+			if(typeof leftElement === 'undefined' && typeof rightElement !== 'undefined') {
+					this.swap(leftIndex, index);
+					this.dequeueHelper(leftIndex);
+			}
+			else if(typeof leftElement !== 'undefined' && typeof rightElement === 'undefined') {
+				this.swap(rightIndex, index);
+				this.dequeueHelper(rightIndex);
+			// If both are defined, use value based on priority 
+			} else {		
+				if(this.isMin) {
+			
+					if (leftElement.priority < rightElement.priority) {
+						this.swap(leftIndex, index);
+						this.dequeueHelper(leftIndex);
+					} else if (leftElement.priority >= rightElement.priority) {
+						this.swap(rightIndex, index);
+						this.dequeueHelper(rightIndex);
+					}
+				} else {
+					if (leftElement.priority > rightElement.priority) {
+						this.swap(leftIndex, index);
+						this.dequeueHelper(leftIndex);
+					} else if (leftElement.priority <= rightElement.priority) {
+						this.swap(rightIndex, index);
+						this.dequeueHelper(rightIndex);
+					}
+				}
+			}
+		},
+		dequeue: function() {
+			var result;
+		
+			if(this.queueArray.length === 0)
+				return;
+		
+			this.swap(1, this.queueArray.length-1);
+			result = this.queueArray.splice(this.queueArray.length-1);
+			this.dequeueHelper();
+		
+			if(result.length !== 0) {
+				return result[0].value;
+			} else
+				return;
+		},
+		isEmpty: function() {
+			return this.queueArray.length === 0;
+		}
+	
+	};
 	
 	if(typeof polygon === 'undefined')
 		return;
@@ -228,7 +236,7 @@ function breadthFirstSearch(polygon, callback, options) {
 	height = polygon.height;
 	
 	nodeSize = Math.max(width, height); // Largest dimension is used for cell size
-	
+	nextNodes = new PriorityQueue(true);
 	
 	if(typeof options.targetPosition !== 'undefined') {
 		// Calculate grid position here
@@ -253,7 +261,7 @@ function breadthFirstSearch(polygon, callback, options) {
 	};
 	
 	/**
-	* @function node.testSpace
+	* @function Node.testSpace
 	* @description Tests a given (grid) space to see if it is available for a node
 	* @params {number} x - x coordinate of grid position
 	* @params {number} y - y coordinate of grid position
@@ -279,7 +287,7 @@ function breadthFirstSearch(polygon, callback, options) {
 	};
 	
 	/**
-	* @function node.addToGrid
+	* @function Node.addToGrid
 	* @description Adds a node instance to the node.grid
 	* @param {object} nodeInstance - node instance to add to the grid
 	*/
@@ -293,6 +301,9 @@ function breadthFirstSearch(polygon, callback, options) {
 		return nodeObject;
 	};
 	
+	/**
+	* @function Node.pathToTarget
+	*/
 	Node.pathToTarget = function() {
 		var currentNode;
 		var dirs = [
@@ -367,7 +378,6 @@ function breadthFirstSearch(polygon, callback, options) {
 		];
 		var dirCurrent;
 		var d = 0;
-		var neighborsAdded = [];
 		var nodeObjectNew;
 		var xNext;
 		var	yNext;
@@ -397,8 +407,9 @@ function breadthFirstSearch(polygon, callback, options) {
 			
 			testSpaceValue = Node.testSpace(xNext, yNext, gridXNext, gridYNext);
 			
+			// Skip spaces that cost beyond range
 			if(testSpaceValue + nodeObject.cost >= range)
-				return;
+				continue;
 			
 			if(testSpaceValue) {
 				nodeObjectNew = Node.addToGrid({
