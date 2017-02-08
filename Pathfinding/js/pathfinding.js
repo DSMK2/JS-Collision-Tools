@@ -127,7 +127,7 @@ function breadthFirstSearch(polygon, callback, options) {
 		},
 		/**
 		* @function PriorityQueue.prototype.queueHelper 
-		* @description Traverses up a the priority queue from an index, until the priority of the value at index doesn't satisfy min/max priority queue conditions
+		* @description Traverses up a the priority queue from an index, until the priority of the value at index doesn't satisfy min/max priority queue conditions. This rebalances the heap.
 		* @param {number} index - Index to traverse the priority queue upwards from
 		*/
 		queueHelper: function(index) {
@@ -144,10 +144,25 @@ function breadthFirstSearch(polygon, callback, options) {
 			// Run until at root (index 1) node	
 			this.queueHelper(parentIndex);
 		},
+		/**
+		* @function PriorityQueue.prototype.queueHelper
+		* @description Inserts a value into the priority queue and rebalances the tree based on min/max position
+		* @param {object} value - Value to insert
+		* @param {number} priority - Priority of the value inserted. In a max heap, high priority value is moved to up the heap, opposite in a min heap.
+		*/
 		queue: function (value, priority) {
+		
+			if(typeof value === 'undefined' || typeof priority === 'undefined')
+				return; 
+				
 			this.queueArray.push({value: value, priority: priority});
 			this.queueHelper(this.queueArray.length-1);
 		},
+		/** 
+		* @function PriorityQueue.prototype.dequeueHelper
+		* @description Traverses down the priority queue from an index until there are no more leaves in the heap to check
+		* @param {number} index - Index value to travers the priority queue downwards from
+		*/
 		dequeueHelper: function(index) {
 			var leftIndex;
 			var rightIndex;
@@ -193,6 +208,11 @@ function breadthFirstSearch(polygon, callback, options) {
 				}
 			}
 		},
+		/**
+		* @function PriorityQueue.prototype.dequeue
+		* @description Removes the top most element from the priority queue and rebalances the heap
+		* @returns {*} Returns the value stored in the priority queue
+		*/
 		dequeue: function() {
 			var result;
 		
@@ -208,6 +228,11 @@ function breadthFirstSearch(polygon, callback, options) {
 			} else
 				return;
 		},
+		/** 
+		* @function PriorityQueue.prototype.isEmpty
+		* @description Returns if the queue is empty or not
+		* @returns {boolean} - true if empty, false otherwise
+		*/
 		isEmpty: function() {
 			return this.queueArray.length === 0;
 		}
@@ -421,9 +446,7 @@ function breadthFirstSearch(polygon, callback, options) {
 				if(typeof nodeObjectNew !== 'undefined') {
 					nextNodes.queue(
 						nodeObjectNew, 
-						getDistance({x: Math.round(targetX), y: Math.round(targetY)}, 
-						{x: gridXNext, y: gridYNext}
-					));
+						getDistance({x: Math.round(targetX), y: Math.round(targetY)}, {x: gridXNext, y: gridYNext}));
 				}
 			}
 			nodeObjectNew = undefined;
