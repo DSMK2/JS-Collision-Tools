@@ -72,13 +72,14 @@ function breadthFirstSearch(polygon, callback, options) {
 	* @param {...boolean} var_args - Whether this is a min (true) or a max array (false/default);
 	* @see http://pages.cs.wisc.edu/~vernon/cs367/notes/11.PRIORITY-Q.html
 	*/
-	function PriorityQueue() {
+	function PriorityQueue(isMin) {
 		var i = 0;
 		var arguementProperty;
 		var argument;
 		var startingElements = [];
-		var isMin;
-				
+		//var isMin;
+		
+		/*		
 		for(arguementProperty in arguments) {
 			if(arguments.hasOwnProperty(arguementProperty)) {
 				argument = arguments[arguementProperty];
@@ -90,16 +91,19 @@ function breadthFirstSearch(polygon, callback, options) {
 					isMin = argument;
 			}
 		}
+		*/
 
 		options = extend(defaults, options);
 	
 		this.queueArray = ['']; // Empty element so root is one
-		this.isMin = isMin;
+		this.isMin = true;
 	
+	/*
 		// Automatically assign priority based on index
 		for(i = 0; i < startingElements.length; i++) {
 			this.insert(startingElements[i], startingElements.length-1-i);
 		}
+	*/
 	
 		return this;
 	}
@@ -114,8 +118,8 @@ function breadthFirstSearch(polygon, callback, options) {
 		swap: function (target, destination) {
 			var temp;
 		
-			if(ypeof this.queueArray[destination] !== 'number' || typeof this.queueArray[target] !== 'number' || target >= this.queueArray.length || destination >= this.queueArray.length)
-				return;
+			//if(typeof this.queueArray[destination] !== 'number' || typeof this.queueArray[target] !== 'number' || target > this.queueArray.length || destination > this.queueArray.length)
+				//return;
 				
 			temp = this.queueArray[destination];
 			this.queueArray[destination] = this.queueArray[target];
@@ -129,7 +133,7 @@ function breadthFirstSearch(polygon, callback, options) {
 		queueHelper: function(index) {
 			var parentIndex = ~~(index/2);
 		
-			if(index == 1 || parentIndex <= 1 || index > this.queueArray.length || parentIndex > this.queueArray.length)
+			if(index == 1 || parentIndex <= 1)
 				return;
 		
 			if(this.isMin ? this.queueArray[parentIndex].priority > this.queueArray[index].priority : this.queueArray[parentIndex].priority < this.queueArray[index].priority)
@@ -156,12 +160,12 @@ function breadthFirstSearch(polygon, callback, options) {
 			leftIndex = index * 2;
 			rightIndex = index * 2 + 1;
 				
-			if (leftIndex < this.queueArray.length && typeof this.queueArray[leftIndex] !== 'undefined') {
+			if (typeof this.queueArray[leftIndex] !== 'undefined') {
 				if(this.isMin ? this.queueArray[leftIndex].priority < this.queueArray[index].priority : this.queueArray[leftIndex].priority > this.queueArray[index].priority)
 					leftElement = this.queueArray[leftIndex];
 			} 
 		
-			if (rightIndex < this.queueArray.length && typeof this.queueArray[rightIndex] !== 'undefined') {
+			if (typeof this.queueArray[rightIndex] !== 'undefined') {
 				if(this.isMin ? this.queueArray[rightIndex].priority < this.queueArray[index].priority : this.queueArray[rightIndex].priority > this.queueArray[index].priority)
 					rightElement = this.queueArray[rightIndex];
 			}
@@ -171,32 +175,21 @@ function breadthFirstSearch(polygon, callback, options) {
 				return;
 		
 			// If one or the other is undefined, use the one that has value		
-			if(typeof leftElement === 'undefined' && typeof rightElement !== 'undefined') {
+			if(typeof leftElement !== 'undefined' && typeof rightElement === 'undefined') {
 					this.swap(leftIndex, index);
 					this.dequeueHelper(leftIndex);
 			}
-			else if(typeof leftElement !== 'undefined' && typeof rightElement === 'undefined') {
+			else if(typeof leftElement === 'undefined' && typeof rightElement !== 'undefined') {
 				this.swap(rightIndex, index);
 				this.dequeueHelper(rightIndex);
 			// If both are defined, use value based on priority 
-			} else {		
-				if(this.isMin) {
-			
-					if (leftElement.priority < rightElement.priority) {
-						this.swap(leftIndex, index);
-						this.dequeueHelper(leftIndex);
-					} else if (leftElement.priority >= rightElement.priority) {
-						this.swap(rightIndex, index);
-						this.dequeueHelper(rightIndex);
-					}
-				} else {
-					if (leftElement.priority > rightElement.priority) {
-						this.swap(leftIndex, index);
-						this.dequeueHelper(leftIndex);
-					} else if (leftElement.priority <= rightElement.priority) {
-						this.swap(rightIndex, index);
-						this.dequeueHelper(rightIndex);
-					}
+			} else {					
+				if (this.isMin ? leftElement.priority < rightElement.priority : leftElement.priority > rightElement.priority) {
+					this.swap(leftIndex, index);
+					this.dequeueHelper(leftIndex);
+				} else if (this.isMin ? leftElement.priority >= rightElement.priority : leftElement.priority <= rightElement.priority) {
+					this.swap(rightIndex, index);
+					this.dequeueHelper(rightIndex);
 				}
 			}
 		},
@@ -207,10 +200,10 @@ function breadthFirstSearch(polygon, callback, options) {
 				return;
 		
 			this.swap(1, this.queueArray.length-1);
-			result = this.queueArray.splice(this.queueArray.length-1);
+			result = this.queueArray.splice(this.queueArray.length-1, 1);
 			this.dequeueHelper();
 		
-			if(result.length !== 0) {
+			if(result.length !== 0 && typeof result[0] !== 'undefined') {
 				return result[0].value;
 			} else
 				return;
