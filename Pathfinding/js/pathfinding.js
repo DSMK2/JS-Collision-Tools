@@ -1,7 +1,11 @@
 // SEE: http://pages.cs.wisc.edu/~vernon/cs367/notes/11.PRIORITY-Q.html
-// Max heap implementation
-function PriorityQueue(elements, options) {
+// Min/Max heap implementation
+function PriorityQueue() {
 	var i = 0;
+	var arguementProperty;
+	var argument;
+	var startingElements = [];
+	var options = {};
 	var defaults = {
 		isMin: false
 	};
@@ -23,11 +27,25 @@ function PriorityQueue(elements, options) {
 		return result;
 	}
 	
+	for(arguementProperty in this.arguments) {
+		if(this.arguments.hasOwnProperty(arguementProperty)) {
+			argument = this.arguments[argumentProperty];
+			
+			if(typeof argument === 'object') {
+				if(argument instanceof Array)
+					startingElements = argument;
+				else
+					options = argument;
+			}
+		}
+	}
+	
 	options = extend(defaults, options);
 	
 	this.queueArray = ['']; // Empty element so root is one
 	this.isMin = options.isMin;
 	
+	// Automatically assign priority based on index
 	for(i = 0; i < elements.length; i++) {
 		this.insert(elements[i], elements.length-1-i);
 	}
@@ -45,18 +63,16 @@ PriorityQueue.prototype = {
 		this.queueArray[destination] = this.queueArray[target];
 		this.queueArray[target] = temp;
 	},
+	// Upwards traversal to balance the heap
 	queueHelper: function(index) {
 		var parentIndex = ~~(index/2);
 		
-		if(index == 1 || parentIndex <= 1)
-			return index;
-				
-		if(typeof this.queueArray[parentIndex] === 'undefined' || typeof this.queueArray[index] === 'undefined')
+		if(index == 1 || parentIndex <= 1 || index > this.queueArray.length || parentIndex > this.queueArray.length)
 			return index;
 		
 		if(this.isMin ? this.queueArray[parentIndex].priority > this.queueArray[index].priority : this.queueArray[parentIndex].priority < this.queueArray[index].priority)
 			this.swap(index, parentIndex);
-		else
+		else // Do nothing if priority is equal
 			return index; 
 			
 		// Run until at root (index 1) node	
@@ -78,12 +94,12 @@ PriorityQueue.prototype = {
 		leftIndex = index * 2;
 		rightIndex = index * 2 + 1;
 				
-		if(typeof this.queueArray[leftIndex] !== 'undefined') {
+		if (leftIndex < this.queueArray.length && typeof this.queueArray[leftIndex] !== 'undefined') {
 			if(this.isMin ? this.queueArray[leftIndex].priority < this.queueArray[index].priority : this.queueArray[leftIndex].priority > this.queueArray[index].priority)
 				leftElement = this.queueArray[leftIndex];
 		} 
 		
-		if (typeof this.queueArray[rightIndex] !== 'undefined') {
+		if (rightIndex < this.queueArray.length && typeof this.queueArray[rightIndex] !== 'undefined') {
 			if(this.isMin ? this.queueArray[rightIndex].priority < this.queueArray[index].priority : this.queueArray[rightIndex].priority > this.queueArray[index].priority)
 				rightElement = this.queueArray[rightIndex];
 		}
@@ -91,7 +107,8 @@ PriorityQueue.prototype = {
 		// Run until there are no more left/right leafs
 		if(typeof leftElement  === 'undefined' && typeof rightElement === 'undefined')
 			return;
-				
+		
+		// If one or the other is undefined, use the one that has value		
 		if(typeof leftElement === 'undefined' && typeof rightElement !== 'undefined') {
 				this.swap(leftIndex, index);
 				this.dequeueHelper(leftIndex);
@@ -99,6 +116,7 @@ PriorityQueue.prototype = {
 		else if(typeof leftElement !== 'undefined' && typeof rightElement === 'undefined') {
 			this.swap(rightIndex, index);
 			this.dequeueHelper(rightIndex);
+		// If both are defined, use value based on priority 
 		} else {		
 			if(this.isMin) {
 			
@@ -189,6 +207,10 @@ function breadthFirstSearch(polygon, callback, options) {
 		}
 		
 		return result;
+	}
+	
+	function getDistance(a, b) {
+		return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
 	}
 	
 	if(typeof polygon === 'undefined')
