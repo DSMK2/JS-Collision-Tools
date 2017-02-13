@@ -46,11 +46,48 @@ window.onload = function() {
 			context.closePath();
 	}
 	
+	function getAngleToPosition (x1, y1, x2, y2)
+	{
+		var angle = -1;
+		var x = x2 - x1;
+		var y = y2 - y1;
+		
+		angle = Math.atan2(y, x);
+		
+		angle = angle < 0 ? angle+(2*Math.PI) : angle;
+		
+		return angle;
+	}
+	
+	function getShortestAngle(angleFrom, angleTo) {
+		var dir;
+		var angleDelta;
+		
+		angleFrom*=Math.PI/180;
+		angleTo*=Math.PI/180;
+		
+		// Get direction rotation is going to happen
+		dir = Math.cos(angleFrom)*Math.sin(angleTo)-Math.sin(angleFrom)*Math.cos(angleTo) > 0 ? 1 : -1;
+		
+		// Offset angle target to match direction i.e. if the direction is possitive and the current angle is 360, the destination is 360 plus
+		angleTo = dir > 0 && angleTo < angleFrom ? angleTo+=2*Math.PI : angleTo;
+		
+		// Find amount of rotation
+		angleDelta = angleTo-angleFrom;
+		
+		// Find shortest angle to rotate to 
+		while(angleDelta < -Math.PI) { angleDelta += 360*Math.PI/180; }
+		while(angleDelta > Math.PI) { angleDelta -= 360*Math.PI/180; }
+		
+		return angleDelta * 180/Math.PI;
+		
+	}
+	
 	// BEGIN: Player
 	function Player(options) {
 		var defaults = {
-			rotation: 20,
-			hp: 0,
+			rotation: 0,
+			hp: 1,
 			position: {x: 0, y: 0}
 		};
 		
@@ -64,7 +101,7 @@ window.onload = function() {
 	Player.prototype = {
 		redraw: function() {
 				
-			drawWithRotation(context, this.position.x - 50/2, this.position.y - 20/2, this.rotation, function() {
+			drawWithRotation(context, this.position.x, this.position.y, this.rotation, function() {
 				context.rect(-50/2, -20/2, 50, 20);
 				context.fill();
 			});
@@ -77,8 +114,25 @@ window.onload = function() {
 	// END: Player
 	
 	// BEGIN: Enemy 
-	function enemy() {
+	function enemy(options) {
+	
+		var defaults {
+			hp: 1,
+			position: {x: 0, y: 0}
+			rotation: 0;
+		}
+		
+		this.position = options.position;
+		this.hp = options.hp;
+		this.rotation = options.rotation;
+		 
+		this.path;
 	}
+	
+	enemy.prototype = {
+		update: function(){
+		}
+	};
 	// END: Enemy
 	
 	// BEGIN: Init
@@ -108,8 +162,12 @@ window.onload = function() {
 	// END: Events
 	
 	function update(){
-		//player.rotation+=5;
+		var angle = getAngleToPosition(mousePosition.x, mousePosition.y, player.position.x, player.position.y)*(180/Math.PI);
+		var shortestAngle = getShortestAngle(player.rotation, angle); 
+		
+		player.setRotation(angle);
 	};
+	
 	function redraw(){
 		context.clearRect(0, 0, context.canvas.width, context.canvas.height);
 		player.redraw();
