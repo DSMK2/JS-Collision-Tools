@@ -88,10 +88,10 @@ window.onload = function() {
 		
 		for(x = 0; x < xMax; x++) {
 			for(y = 0; y < yMax; y++) {
-				cost = Math.round(4 * Math.abs(simplex.noise2D(x/8, y/8)));
-				if(cost === 0)
-					cost = 999;
-
+				cost = Math.round(10 * Math.abs(simplex.noise2D(x/8, y/8)));
+				//if(cost === 0)
+					//cost = 999;
+				//cost = 1;
 				Grid.node[x + '_' + y] = new GridNode(x*size, y*size, size, cost);
 			} 
 		}
