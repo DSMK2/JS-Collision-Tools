@@ -31,9 +31,17 @@ window.onload = function() {
 		return result;
 	}
 	
+	/**
+	* @function drawWithRotation
+	* @description Helper function draw elements with a given angle of rotation
+	* @param {object} context - Context to work with
+	* @param {number} x - X origin to rotate
+	* @param {number} y - Y origin to rotate
+	* @param {number} rotation - Rotation in degrees to rotate
+	* @param {function} callback - Function that draws something
+	*/
 	function drawWithRotation(context, x, y, rotation, callback) {
-		context.beginPath();
-			
+			context.beginPath();
 			
 			context.translate(x, y);
 			context.rotate(rotation * Math.PI / 180);
@@ -46,6 +54,15 @@ window.onload = function() {
 			context.closePath();
 	}
 	
+	/**
+	* @function getAngleToPosition
+	* @description Returns angle between coordinates
+	* @param {number} x1 - X coordinate of first position
+	* @param {number} y1 - Y coordinate of first position
+	* @param {number} x2 - X coordinate of second position
+	* @param {number} y2 - Y coordinate of second position
+	* @returns {number} - Angle in radians 
+	*/
 	function getAngleToPosition (x1, y1, x2, y2)
 	{
 		var angle = -1;
@@ -59,6 +76,13 @@ window.onload = function() {
 		return angle;
 	}
 	
+	/**
+	* @function getShortestAngle
+	* @description Returns the shortest angle from angleFrom to angleTo
+	* @param {number} angleFrom - Origin angle in radians
+	* @param {number} angleTo - Destination angle in radians
+	* returns {number} - Angle in radians
+	*/
 	function getShortestAngle(angleFrom, angleTo) {
 		var dir;
 		var angleDelta;
@@ -79,7 +103,7 @@ window.onload = function() {
 		while(angleDelta < -Math.PI) { angleDelta += 360*Math.PI/180; }
 		while(angleDelta > Math.PI) { angleDelta -= 360*Math.PI/180; }
 		
-		return angleDelta * 180/Math.PI;
+		return angleDelta;
 		
 	}
 	
@@ -116,10 +140,10 @@ window.onload = function() {
 	// BEGIN: Enemy 
 	function enemy(options) {
 	
-		var defaults {
+		var defaults = {
 			hp: 1,
-			position: {x: 0, y: 0}
-			rotation: 0;
+			position: {x: 0, y: 0},
+			rotation: 0
 		}
 		
 		this.position = options.position;

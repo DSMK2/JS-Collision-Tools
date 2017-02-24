@@ -1,3 +1,10 @@
+/*
+* Author : Aric Ng
+* Website: http://www.aricng.com
+* GitHub: https://github.com/DSMK2
+* MIT license: http://opensource.org/licenses/MIT
+*/
+
 function SpatialHash(cWidth, cHeight) {
 	this.buckets = {};
 	
