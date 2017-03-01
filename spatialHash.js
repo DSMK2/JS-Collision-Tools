@@ -4,16 +4,12 @@
 * GitHub: https://github.com/DSMK2
 * MIT license: http://opensource.org/licenses/MIT
 * 
-* VERSION: 1.0.1.1
+* VERSION: 1.0.1
 * - Updated to use Maps instead of Objects after noting performance gains
-* - Added fallback for older browsers
 */
 
 function SpatialHash(cWidth, cHeight) {
-	
-	this.mapObject = true ? SpatialHash.SHMap : Map;
-
-	this.buckets = new this.mapObject();
+	this.buckets = new Map();
 	
 	// Cell size
 	this.cWidth = cWidth;
@@ -23,29 +19,6 @@ function SpatialHash(cWidth, cHeight) {
 	this.gWidth = 0;
 	this.gHeight = 0;
 }
-
-// Fallback for browsers that do not support ES6 Map
-SpatialHash.SHMap = function(){
-	this.length = 0;
-	this.map = {};
-};
-
-SpatialHash.SHMap.prototype = {
-	get: function(key) {
-		return this.map[key];
-	},
-	set: function(key, value) {
-		this.map[key] = value;
-		this.length++;
-	},
-	has: function(key) {
-		return typeof this.map[key] !== 'undefined';
-	},
-	clear: function() {
-		this.map = {};
-		this.length = 0;
-	}
-};
 
 SpatialHash.numItems = 0;
 
@@ -62,6 +35,9 @@ SpatialHash.prototype = {
 		var boundsX = {};
 		var boundsY = {};
 		var position = '';
+		var positions = [];
+		var i = 0;
+		var d = 0;
 		var itemNode = {};
 		var bucket;
 			
@@ -91,9 +67,9 @@ SpatialHash.prototype = {
 			
 				// Undefined positions are defined as objects, new "buckets"
 				if(!this.buckets.has(position))
-					this.buckets.set(position, new this.mapObject());
+					this.buckets.set(position, new Map());
 				
-				bucket = this.buckets.get(position);
+				bucket = this.buckets.get(position)
 				
 				// Push item in if slot with ID doesn't exist
 				if(!bucket.has(SpatialHash.numItems))
@@ -120,8 +96,11 @@ SpatialHash.prototype = {
 		var item;
 		var results = [];
 		var bucket;
+		var i = 0;
+		var d = 0;
+		var found = false;
 		var itemID;
-		var itemChecklist = new this.mapObject();
+		var itemChecklist = new Map();
 		var position;
 
 		// Must have a position
@@ -141,42 +120,24 @@ SpatialHash.prototype = {
 		// Look for buckets with positions found within bounds
 		for(x = boundsX.low; x <= boundsX.high; x++) {
 			for(y = boundsY.low; y <= boundsY.high; y++) {
-				position = x + '_' + y;
+				position = x + '_' + y
 				
 				// Push items in bucket to results, while skipping over dupes
 				if(this.buckets.has(position)) {
 					
 					bucket = this.buckets.get(position);
 					
-					// Fallback: Use object based map if ES6 Map is undefined
-					if(bucket instanceof SpatialHash.SHMap) {
-						// Push all items in position into results
-						for(itemID in bucket.map) {
-							if(bucket.map.hasOwnProperty(itemID)) {
-								
-								item = bucket.get(itemID);
-						
-								// Add item id to checklist and results if it doesn't exist
-								if(!itemChecklist.has(itemID)) {
-									itemChecklist.set(item.id, true);
-									results.push(item.item);
-								}
-							}
-						}
-					// Use ES6 Map if not undefined
-					} else {
-						// Push all items in position into results
-						for(itemID of bucket.keys()) {
+					// Push all items in position into results
+					for(itemID of bucket.keys()) {
 							
-							item = bucket.get(itemID);
+						item = bucket.get(itemID);
 						
-							// Add item id to checklist and results if it doesn't exist
-							if(!itemChecklist.has(itemID)) {
-								itemChecklist.set(item.id, true);
-								results.push(item.item);
-							}
-						
+						// Add item id to checklist and results if it doesn't exist
+						if(!itemChecklist.has(itemID)) {
+							itemChecklist.set(item.id, true);
+							results.push(item.item);
 						}
+						
 					}
 				}	
 			}
