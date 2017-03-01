@@ -11,7 +11,7 @@
 
 function SpatialHash(cWidth, cHeight) {
 	
-	this.mapObject = true ? SpatialHash.SHMap : Map;
+	this.mapObject = typeof Map === 'undefined' ? SpatialHash.SHMap : Map;
 
 	this.buckets = new this.mapObject();
 	
