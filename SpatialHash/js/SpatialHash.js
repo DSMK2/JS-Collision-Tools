@@ -41,6 +41,15 @@ SpatialHash.SHMap.prototype = {
 	has: function(key) {
 		return typeof this.map[key] !== 'undefined';
 	},
+	forEach: function(callback) {
+		var key;
+		
+		for(key in this.map) {
+			if(this.map.hasOwnProperty(key)) {
+				callback(this.map[key], key);		
+			}
+		}
+	},
 	clear: function() {
 		this.map = {};
 		this.length = 0;
@@ -117,12 +126,19 @@ SpatialHash.prototype = {
 	retrieve: function(x, y, width, height) {
 		var boundsX = {};
 		var boundsY = {};
-		var item;
 		var results = [];
 		var bucket;
-		var itemID;
 		var itemChecklist = new this.mapObject();
 		var position;
+
+		function eachCallback(item, itemID) {
+				
+			// Add item id to checklist and results if it doesn't exist
+			if(!itemChecklist.has(itemID)) {
+				itemChecklist.set(item.id, true);
+				results.push(item.item);
+			}
+		}
 
 		// Must have a position
 		if(typeof x !== 'number' && typeof y !== 'number')
@@ -148,36 +164,9 @@ SpatialHash.prototype = {
 					
 					bucket = this.buckets.get(position);
 					
-					// Fallback: Use object based map if ES6 Map is undefined
-					if(bucket instanceof SpatialHash.SHMap) {
-						// Push all items in position into results
-						for(itemID in bucket.map) {
-							if(bucket.map.hasOwnProperty(itemID)) {
-								
-								item = bucket.get(itemID);
-						
-								// Add item id to checklist and results if it doesn't exist
-								if(!itemChecklist.has(itemID)) {
-									itemChecklist.set(item.id, true);
-									results.push(item.item);
-								}
-							}
-						}
-					// Use ES6 Map if not undefined
-					} else {
-						// Push all items in position into results
-						for(itemID of bucket.keys()) {
-							
-							item = bucket.get(itemID);
-						
-							// Add item id to checklist and results if it doesn't exist
-							if(!itemChecklist.has(itemID)) {
-								itemChecklist.set(item.id, true);
-								results.push(item.item);
-							}
-						
-						}
-					}
+					// Push all items in position into results
+					bucket.forEach(eachCallback);
+				
 				}	
 			}
 		}
