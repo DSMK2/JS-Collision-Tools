@@ -3,10 +3,13 @@
 * Website: http://www.aricng.com
 * GitHub: https://github.com/DSMK2
 * MIT license: http://opensource.org/licenses/MIT
+* 
+* VERSION: 1.0.1
+* - Updated to use Maps instead of Objects after noting performance gains
 */
 
 function SpatialHash(cWidth, cHeight) {
-	this.buckets = {};
+	this.buckets = new Map();
 	
 	// Cell size
 	this.cWidth = cWidth;
@@ -22,24 +25,21 @@ SpatialHash.numItems = 0;
 SpatialHash.prototype = {
 	clear: function() {
 		// Let garbage collection do the work
-		this.buckets = {};
+		this.buckets.clear();
 		SpatialHash.numItems = 0;
 	},
 	/**
 	* Inserts item into the hash map
 	*/
 	insert: function(x, y, width, height, item) {
-		var
-		width,
-		height,
-		boundsX = {},
-		boundsY = {},
-		position = '',
-		positions = [],
-		i = 0,
-		d = 0,
-		itemNode = {},
-		bucket;
+		var boundsX = {};
+		var boundsY = {};
+		var position = '';
+		var positions = [];
+		var i = 0;
+		var d = 0;
+		var itemNode = {};
+		var bucket;
 			
 		// Must have a position
 		if(typeof x !== 'number' || typeof y !== 'number')
@@ -63,22 +63,22 @@ SpatialHash.prototype = {
 		// Assign items to 'buckets'
 		for(x = boundsX.low; x <= boundsX.high; x++) {
 			for(y = boundsY.low; y <= boundsY.high; y++) {
-				position = x + ' ' + y;				
+				position = x + '_' + y;				
 			
 				// Undefined positions are defined as objects, new "buckets"
-				if(typeof this.buckets[position] === 'undefined')
-					this.buckets[position] = {};
+				if(!this.buckets.has(position))
+					this.buckets.set(position, new Map());
 				
-				bucket = this.buckets[position];
+				bucket = this.buckets.get(position)
 				
 				// Push item in if slot with ID doesn't exist
-				if(typeof bucket[SpatialHash.numItems] === 'undefined')
-					bucket[SpatialHash.numItems] = itemNode;
+				if(!bucket.has(SpatialHash.numItems))
+					bucket.set(SpatialHash.numItems, itemNode);
 			}
 		}
 		
 		SpatialHash.numItems++;
-		
+				
 		return true;
 	},
 	/**
@@ -91,17 +91,17 @@ SpatialHash.prototype = {
 	* @returns {array} An array representing items found
 	*/
 	retrieve: function(x, y, width, height) {
-		var 
-		boundsX = {},
-		boundsY = {},
-		item,
-		results = [],
-		bucket,
-		i = 0,
-		d = 0,
-		found = false,
-		itemID,
-		itemChecklist = {};
+		var boundsX = {};
+		var boundsY = {};
+		var item;
+		var results = [];
+		var bucket;
+		var i = 0;
+		var d = 0;
+		var found = false;
+		var itemID;
+		var itemChecklist = new Map();
+		var position;
 
 		// Must have a position
 		if(typeof x !== 'number' && typeof y !== 'number')
@@ -120,21 +120,21 @@ SpatialHash.prototype = {
 		// Look for buckets with positions found within bounds
 		for(x = boundsX.low; x <= boundsX.high; x++) {
 			for(y = boundsY.low; y <= boundsY.high; y++) {
-				bucket = this.buckets[x + ' ' + y];
+				position = x + '_' + y
 				
 				// Push items in bucket to results, while skipping over dupes
-				if(typeof bucket !== 'undefined') {
+				if(this.buckets.has(position)) {
+					
+					bucket = this.buckets.get(position);
 					
 					// Push all items in position into results
-					for(itemID in bucket) {
-						if(!bucket.hasOwnProperty(itemID))
-							continue;
+					for(itemID of bucket.keys()) {
 							
-						item = bucket[itemID];
+						item = bucket.get(itemID);
 						
 						// Add item id to checklist and results if it doesn't exist
-						if(typeof itemChecklist[item.id] === 'undefined') {
-							itemChecklist[item.id] = true;
+						if(!itemChecklist.has(itemID)) {
+							itemChecklist.set(item.id, true);
 							results.push(item.item);
 						}
 						

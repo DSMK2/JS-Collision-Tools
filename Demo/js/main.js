@@ -182,6 +182,10 @@ window.onload = function() {
 			mousePosition.x = e.clientX-$(canvas).offset().left;
 			mousePosition.y = e.clientY-$(canvas).offset().top;
 		});
+		
+		window.onmousedown = function(e) {
+			console.log(e.which);
+		};
 	}
 	// END: Events
 	
