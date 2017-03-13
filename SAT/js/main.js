@@ -203,8 +203,13 @@ window.onload = function() {
 			context.beginPath();
 			context.strokeStyle = '#FFAE00';
 			context.lineWidth = 2;
-			context.moveTo(rects[0].x, rects[0].y);
-			context.lineTo(rects[0].x+vector.x*mta, rects[0].y+vector.y*mta);
+			if(testResult.origin == playerRect) {
+				context.moveTo(playerRect.x, playerRect.y);
+				context.lineTo(playerRect.x+vector.x*mta, playerRect.y+vector.y*mta);
+			} else {
+				context.moveTo(rects[0].x, rects[0].y);
+				context.lineTo(rects[0].x+vector.x*mta, rects[0].y+vector.y*mta);
+			}
 			context.stroke();
 			context.closePath();
 		}

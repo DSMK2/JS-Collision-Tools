@@ -46,7 +46,7 @@ window.onload = function() {
 			context.translate(x, y);
 			context.rotate(rotation * Math.PI / 180);
 			
-			callback();
+			callback(context);
 			
 			context.rotate(-(rotation * Math.PI / 180));
 			context.translate(-x, -y);
@@ -107,6 +107,77 @@ window.onload = function() {
 		
 	}
 	
+	// BEGIN: Projectile
+	function Projectile(options) {
+		var defaults = {
+			polygon: [
+				{x: 15, y: 0},
+				{x: -10, y: -10},
+				{x: -10, y: 10},
+			],
+			position: {x: 0, y: 0},
+			velocity: {x: 0, y: 0},
+			rotation: 0,
+			lifetime: 10000			// Milliseconds to live
+		};
+		
+		options = extend(defaults, options);
+		
+		this.polygon = options.polygon;
+		this.position = options.position;
+		this.velocity = options.velocity;
+		this.rotation = options.rotation;
+		
+
+		this.endTime = (new Date()).getTime() + options.lifetime;
+		this.index = Projectile.projectiles.length;
+		
+		Projectile.projectiles.push(this);
+		
+		return this;
+	}
+	
+	Projectile.projectiles = [];
+	
+	Projectile.prototype = {
+		update: function() {
+		
+			if((new Date()).getTime() >= this.endTime) {
+				return;
+			} 
+		
+			this.position.x += this.velocity.x;
+			this.position.y += this.velocity.y;
+			
+			
+		},
+		redraw: function() {
+			var _this = this;
+
+			drawWithRotation(context, this.position.x, this.position.y, this.rotation, function(context) {
+				var i = 1;
+				var point;
+				
+				
+				context.moveTo(_this.polygon[0].x, _this.polygon[0].y); 
+				
+				for(i = 1; i < _this.polygon.length; i++) {
+					point = _this.polygon[i];
+					context.lineTo(point.x, point.y);		
+				}
+				
+				context.lineTo(_this.polygon[0].x, _this.polygon[0].y); 
+				
+				context.fillStyle = "#f00";
+				context.fill();
+				context.stroke();
+			
+			});
+			
+		}
+	}
+	// END: Projectile
+	
 	// BEGIN: Player
 	function Player(options) {
 		var defaults = {
@@ -125,20 +196,29 @@ window.onload = function() {
 	Player.prototype = {
 		redraw: function() {
 				
-			drawWithRotation(context, this.position.x, this.position.y, this.rotation, function() {
+			drawWithRotation(context, this.position.x, this.position.y, this.rotation, function(context) {
 				context.rect(-50/2, -20/2, 50, 20);
+				context.fillStyle = '#000';
 				context.fill();
 			});
 			
 		},
 		setRotation: function(degrees) {
 			this.rotation = degrees;
+		},
+		fire: function() {
+			console.log(this.rotation);
+			new Projectile({
+				position: extend(this.position, {}),
+				velocity: {x: 5*Math.cos(this.rotation*Math.PI/180), y: 5*Math.sin(this.rotation*Math.PI/180)},
+				rotation: this.rotation
+			});
 		}
 	}
 	// END: Player
 	
 	// BEGIN: Enemy 
-	function enemy(options) {
+	function Enemy(options) {
 	
 		var defaults = {
 			hp: 1,
@@ -153,7 +233,7 @@ window.onload = function() {
 		this.path;
 	}
 	
-	enemy.prototype = {
+	Enemy.prototype = {
 		update: function(){
 		}
 	};
@@ -185,20 +265,47 @@ window.onload = function() {
 		
 		window.onmousedown = function(e) {
 			console.log(e.which);
+			
+			switch(e.which) {
+				case 1:
+					player.fire();
+					break;
+				default:
+					break;
+			}
 		};
 	}
 	// END: Events
 	
 	function update(){
-		var angle = getAngleToPosition(mousePosition.x, mousePosition.y, player.position.x, player.position.y)*(180/Math.PI);
+		var angle = getAngleToPosition(player.position.x, player.position.y, mousePosition.x, mousePosition.y)*(180/Math.PI);
 		var shortestAngle = getShortestAngle(player.rotation, angle); 
 		
 		player.setRotation(angle);
+		
+		(function() {
+			var projectile;
+			for(i = 0; i < Projectile.projectiles.length; i++) {
+				projectile = Projectile.projectiles[i];
+				projectile.update();
+			}
+		})();
 	};
 	
 	function redraw(){
+		var i = 0;
+		
 		context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+		
 		player.redraw();
+		
+		(function() {
+			var projectile;
+			for(i = 0; i < Projectile.projectiles.length; i++) {
+				projectile = Projectile.projectiles[i];
+				projectile.redraw();
+			}
+		})();
 		
 		window.requestAnimationFrame(function() {
 			redraw();
