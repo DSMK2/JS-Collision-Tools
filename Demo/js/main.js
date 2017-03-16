@@ -7,6 +7,8 @@ window.onload = function() {
 	var points;
 	var player;
 	
+	var enemyMin = 10;
+	
 	/**
 	* @function extend 
 	* @description Returns an object that has 'default' values overwritten by 'options', otherwise default values. Properties not found in defaults are skipped.
@@ -57,10 +59,10 @@ window.onload = function() {
 	/**
 	* @function getAngleToPosition
 	* @description Returns angle between coordinates
-	* @param {number} x1 - X coordinate of first position
-	* @param {number} y1 - Y coordinate of first position
-	* @param {number} x2 - X coordinate of second position
-	* @param {number} y2 - Y coordinate of second position
+	* @param {number} x1 - X coordinate of from position
+	* @param {number} y1 - Y coordinate of from position
+	* @param {number} x2 - X coordinate of to position
+	* @param {number} y2 - Y coordinate of to position
 	* @returns {number} - Angle in radians 
 	*/
 	function getAngleToPosition (x1, y1, x2, y2)
@@ -107,6 +109,16 @@ window.onload = function() {
 		
 	}
 	
+	/**
+	* @function generateGUID
+	* @description Generates a GUID using browser implementation of Math.random. Do not forget to check for duplicates
+	* @returns {string} GUID
+	* @see: http://stackoverflow.com/questions/105034/create-guid-uuid-in-javascript/2117523#2117523
+	*/
+	function generateGUID() {
+		return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {var r = Math.random()*16|0,v=c=='x'?r:r&0x3|0x8;return v.toString(16);});
+	}
+	
 	// BEGIN: Projectile
 	function Projectile(options) {
 		var defaults = {
@@ -118,7 +130,7 @@ window.onload = function() {
 			position: {x: 0, y: 0},
 			velocity: {x: 0, y: 0},
 			rotation: 0,
-			lifetime: 10000			// Milliseconds to live
+			lifetime: 1500		// Milliseconds to live
 		};
 		
 		options = extend(defaults, options);
@@ -128,21 +140,49 @@ window.onload = function() {
 		this.velocity = options.velocity;
 		this.rotation = options.rotation;
 		
-
+		// Lifetime and Memory handling
 		this.endTime = (new Date()).getTime() + options.lifetime;
-		this.index = Projectile.projectiles.length;
+		this.GUID = uuid.v4();
+		this.needsDelete = false;
 		
-		Projectile.projectiles.push(this);
+		// Unsure if duplicates need to be checked
+		Projectile.projectiles[this.GUID] = this;
+		Projectile.count++;
 		
 		return this;
 	}
 	
-	Projectile.projectiles = [];
+	// Run after updating projectiles
+	Projectile.clean = function() {
+		var projectileID;
+		
+		if(Projectile.count === 0)
+			return;
+		
+		while(Projectile.projectilesToDelete.length !== 0) {
+			
+			projectileID = Projectile.projectilesToDelete.shift();
+			
+			if(Projectile.projectiles.hasOwnProperty(projectileID)) {
+				Projectile.count--;
+				delete Projectile.projectiles[projectileID]
+			}
+		}
+	};
+	
+	Projectile.projectilesToDelete = [];
+	Projectile.projectiles = {};
+	Projectile.count = 0;
 	
 	Projectile.prototype = {
 		update: function() {
-		
+			
+			if(this.needsDelete)
+				return;
+			
 			if((new Date()).getTime() >= this.endTime) {
+				Projectile.projectilesToDelete.push(this.GUID);
+				this.needsDelete = true;
 				return;
 			} 
 		
@@ -153,7 +193,10 @@ window.onload = function() {
 		},
 		redraw: function() {
 			var _this = this;
-
+			
+			if(this.needsDelete)
+				return;
+			
 			drawWithRotation(context, this.position.x, this.position.y, this.rotation, function(context) {
 				var i = 1;
 				var point;
@@ -181,15 +224,15 @@ window.onload = function() {
 	// BEGIN: Player
 	function Player(options) {
 		var defaults = {
+			hp: 100,
 			rotation: 0,
-			hp: 1,
 			position: {x: 0, y: 0}
 		};
 		
 		options = extend(defaults, options);
 		
-		this.rotation = options.rotation;
 		this.hp = options.hp;
+		this.rotation = options.rotation;
 		this.position = options.position;
 	}
 	
@@ -222,19 +265,68 @@ window.onload = function() {
 	
 		var defaults = {
 			hp: 1,
+			rotation: 0,
 			position: {x: 0, y: 0},
-			rotation: 0
+			polygon: [
+				{x: -15, y: -15},
+				{x: 15, y: -15},
+				{x: 15, y: 15},
+				{x: -15, y: 15}
+			]
 		}
 		
-		this.position = options.position;
+		options = extend(defaults, options);
+		
 		this.hp = options.hp;
 		this.rotation = options.rotation;
-		 
+		this.position = options.position;
+		this.polygon = options.polygon;
+		this.pathToPlayer;
+		
+		this.needsDelete = false;
+		this.GUID = uuid.v4();
+		
+		Enemy.enemies[this.GUID] = this;
+		Enemy.count++;
+		
 		this.path;
+		console.log(this.position);
+		return this;
 	}
+	
+	Enemy.enemies = {};
+	Enemy.count = 0;
 	
 	Enemy.prototype = {
 		update: function(){
+			// Get path
+			// Move along path
+			// Rinse, repeat per update
+		},
+		redraw: function(){
+			var _this = this;
+			
+			drawWithRotation(context, this.position.x, this.position.y, this.rotation, function() {
+				var v = 1;
+				var point;
+
+				context.moveTo(_this.polygon[0].x, _this.polygon[0].y);
+				
+				for(v; v < _this.polygon.length; v++) {
+					point = _this.polygon[v];
+					
+					context.lineTo(point.x, point.y);
+					
+				}
+				
+				context.lineTo(_this.polygon[0].x, _this.polygon[0].y);
+				
+				context.fillStyle = '#f00';
+				
+				context.stroke();
+				context.fill();
+			});
+			
 		}
 	};
 	// END: Enemy
@@ -280,15 +372,42 @@ window.onload = function() {
 	function update(){
 		var angle = getAngleToPosition(player.position.x, player.position.y, mousePosition.x, mousePosition.y)*(180/Math.PI);
 		var shortestAngle = getShortestAngle(player.rotation, angle); 
+		var position;
+		var angle;
 		
 		player.setRotation(angle);
 		
+		// Spawn moar enemies 
+		if(Enemy.count < enemyMin) {
+			angle = 360*Math.random();
+			position = {x: 300 * Math.cos(angle * Math.PI/180) + player.position.x, y: 300 * Math.sin(angle * Math.PI/180) + player.position.y};
+			new Enemy({
+				position: position
+			});
+		}
+		
+		// Update enemies 
 		(function() {
-			var projectile;
-			for(i = 0; i < Projectile.projectiles.length; i++) {
-				projectile = Projectile.projectiles[i];
-				projectile.update();
+			var enemy;
+			
+			for(enemy in Enemy.enemies) {
+				if(Enemy.enemies.hasOwnProperty(enemy)) {
+					//Enemy.enemies[enemy].update();
+				}
 			}
+		})();
+		
+		// Update projectiles
+		(function() {
+			var prop;
+			
+			for(prop in Projectile.projectiles) {
+				if(Projectile.projectiles.hasOwnProperty(prop)) {
+					Projectile.projectiles[prop].update();
+				}
+			}
+			
+			Projectile.clean();
 		})();
 	};
 	
@@ -299,11 +418,25 @@ window.onload = function() {
 		
 		player.redraw();
 		
+		// Redraw enemies 
 		(function() {
-			var projectile;
-			for(i = 0; i < Projectile.projectiles.length; i++) {
-				projectile = Projectile.projectiles[i];
-				projectile.redraw();
+			var enemy;
+			
+			for(enemy in Enemy.enemies) {
+				if(Enemy.enemies.hasOwnProperty(enemy)) {
+					Enemy.enemies[enemy].redraw();
+				}
+			}
+		})();
+		
+		// Redraw projectiles
+		(function() {
+			var prop;
+			
+			for(prop in Projectile.projectiles) {
+				if(Projectile.projectiles.hasOwnProperty(prop)) {
+					Projectile.projectiles[prop].redraw();
+				}
 			}
 		})();
 		
