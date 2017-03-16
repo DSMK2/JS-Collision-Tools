@@ -290,7 +290,6 @@ window.onload = function() {
 		Enemy.count++;
 		
 		this.path;
-		console.log(this.position);
 		return this;
 	}
 	
@@ -299,6 +298,7 @@ window.onload = function() {
 	
 	Enemy.prototype = {
 		update: function(){
+			var path
 			// Get path
 			// Move along path
 			// Rinse, repeat per update
