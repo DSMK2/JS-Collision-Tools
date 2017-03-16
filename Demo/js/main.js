@@ -9,6 +9,8 @@ window.onload = function() {
 	
 	var enemyMin = 10;
 	
+	var spatialHash = new SpatialHash(30, 30);
+	
 	/**
 	* @function extend 
 	* @description Returns an object that has 'default' values overwritten by 'options', otherwise default values. Properties not found in defaults are skipped.
@@ -110,13 +112,30 @@ window.onload = function() {
 	}
 	
 	/**
-	* @function generateGUID
-	* @description Generates a GUID using browser implementation of Math.random. Do not forget to check for duplicates
-	* @returns {string} GUID
-	* @see: http://stackoverflow.com/questions/105034/create-guid-uuid-in-javascript/2117523#2117523
+	* @function getPolygonAABB
+	* @description Find's a polygon's axis aligned bounding box (AABB)
+	* @param {Array} polygon - An array of objects with x/y coordinates that make up a polygon
+	* @returns {object} - width/height dimensions of a given polygon's AABB
 	*/
-	function generateGUID() {
-		return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {var r = Math.random()*16|0,v=c=='x'?r:r&0x3|0x8;return v.toString(16);});
+	function getPolygonAABB(polygon) {
+		var results = {width: -1, height: -1};
+		var minX;
+		var maxX;
+		var minY;
+		var maxY;
+		
+		var p = 0;
+		var point;
+		
+		for(p; p < polygon.length; p++) {
+			point = polygon[p];
+			
+			if(typeof minX === 'undefined')
+			if(typeof maxX === 'undefined')
+			if(typeof minY === 'undefined')
+			if(typeof maxY === 'undefined')
+		
+		}
 	}
 	
 	// BEGIN: Projectile
@@ -394,6 +413,7 @@ window.onload = function() {
 				if(Enemy.enemies.hasOwnProperty(enemy)) {
 					//Enemy.enemies[enemy].update();
 				}
+				
 			}
 		})();
 		
