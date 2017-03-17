@@ -45,7 +45,6 @@ window.onload = function() {
 	* @param {function} callback - Function that draws something
 	*/
 	function drawWithRotation(context, x, y, rotation, callback) {
-			context.beginPath();
 			
 			context.translate(x, y);
 			context.rotate(rotation * Math.PI / 180);
@@ -55,7 +54,6 @@ window.onload = function() {
 			context.rotate(-(rotation * Math.PI / 180));
 			context.translate(-x, -y);
 			
-			context.closePath();
 	}
 	
 	/**
@@ -114,28 +112,58 @@ window.onload = function() {
 	/**
 	* @function getPolygonAABB
 	* @description Find's a polygon's axis aligned bounding box (AABB)
-	* @param {Array} polygon - An array of objects with x/y coordinates that make up a polygon
+	* @param {Array} polygon - An array of objects with x/y properties that make up a polygon
 	* @returns {object} - width/height dimensions of a given polygon's AABB
 	*/
 	function getPolygonAABB(polygon) {
-		var results = {width: -1, height: -1};
-		var minX;
-		var maxX;
-		var minY;
-		var maxY;
+		var minX = polygon[0].x;
+		var maxX = polygon[0].x;
+		var minY = polygon[0].y;
+		var maxY = polygon[0].y;
+		var width;
+		var height;
 		
-		var p = 0;
+		var p = 1;
 		var point;
 		
 		for(p; p < polygon.length; p++) {
 			point = polygon[p];
 			
-			if(typeof minX === 'undefined')
-			if(typeof maxX === 'undefined')
-			if(typeof minY === 'undefined')
-			if(typeof maxY === 'undefined')
-		
+			minX = Math.min(minX, point.x);
+			maxX = Math.max(maxX, point.x);
+			
+			minY = Math.min(minY, point.y);
+			maxY = Math.max(maxY, point.y);
 		}
+		console.log(minX, maxX, minY, maxY);
+		width = Math.abs(maxX - minX);
+		height = Math.abs(maxY - minY);
+		
+		return {width: width, height: height};
+	}
+	
+	/**
+	* @function getPolygonCentroid
+	* @param {Array} polygon - An array of objects with x/y properties that make up a polygon
+	* @returns {object} - Polygon centroid created from the average of X and Y coordinates
+	* @see: http://mathcentral.uregina.ca/qq/database/qq.09.07/h/david7.html (Not wrong, but may not be what I am looking for)
+	* @see: http://math.stackexchange.com/questions/3177/why-doesnt-a-simple-mean-give-the-position-of-a-centroid-in-a-polygon
+	* @todo: Triangulate polygon then calculate centroid from resulting triangles
+	*/
+	function getPolygonCentroid(polygon) {
+		var p = 0;
+		var point;
+		var sumX = 0;
+		var sumY = 0;
+		
+		for(p; p < polygon.length; p++) {
+			var point = polygon[p];
+			
+			sumX += point.x;
+			sumY += point.y;
+		}
+		
+		return {x: sumX/polygon.length, y: sumY/polygon.length};
 	}
 	
 	// BEGIN: Projectile
@@ -289,6 +317,7 @@ window.onload = function() {
 			polygon: [
 				{x: -15, y: -15},
 				{x: 15, y: -15},
+				{x: 30, y: 0},
 				{x: 15, y: 15},
 				{x: -15, y: 15}
 			]
@@ -301,6 +330,10 @@ window.onload = function() {
 		this.position = options.position;
 		this.polygon = options.polygon;
 		this.pathToPlayer;
+		
+		this.aabb = getPolygonAABB(this.polygon);
+		this.polygonCenter = getPolygonCentroid(this.polygon);
+		console.log(this.polygonCenter);
 		
 		this.needsDelete = false;
 		this.GUID = uuid.v4();
@@ -328,9 +361,17 @@ window.onload = function() {
 			drawWithRotation(context, this.position.x, this.position.y, this.rotation, function() {
 				var v = 1;
 				var point;
-
-				context.moveTo(_this.polygon[0].x, _this.polygon[0].y);
 				
+				// Yes actual polygon centers are a thing :d
+				context.beginPath();
+				context.rect(-_this.aabb.width/2+_this.polygonCenter.x, -_this.aabb.height/2+_this.polygonCenter.y, _this.aabb.width, _this.aabb.height);
+				context.fillStyle = '#f0f';
+				context.fill();
+				context.closePath();
+				
+				context.beginPath();
+				context.moveTo(_this.polygon[0].x, _this.polygon[0].y);
+							
 				for(v; v < _this.polygon.length; v++) {
 					point = _this.polygon[v];
 					
@@ -344,6 +385,8 @@ window.onload = function() {
 				
 				context.stroke();
 				context.fill();
+				context.closePath();
+
 			});
 			
 		}
@@ -396,6 +439,8 @@ window.onload = function() {
 		
 		player.setRotation(angle);
 		
+		
+		
 		// Spawn moar enemies 
 		if(Enemy.count < enemyMin) {
 			angle = 360*Math.random();
@@ -407,11 +452,12 @@ window.onload = function() {
 		
 		// Update enemies 
 		(function() {
+			var enemyID;
 			var enemy;
 			
-			for(enemy in Enemy.enemies) {
-				if(Enemy.enemies.hasOwnProperty(enemy)) {
-					//Enemy.enemies[enemy].update();
+			for(enemyID in Enemy.enemies) {
+				if(Enemy.enemies.hasOwnProperty(enemyID)) {
+					enemy = Enemy.enemies[enemyID];
 				}
 				
 			}
