@@ -142,12 +142,53 @@ window.onload = function() {
 		return {width: width, height: height};
 	}
 	
+	// A helper function that transform an array of vertex objects into integer pairs
+	function flattenPolygon(polygon) {
+		var p = 0;
+		var result = [];
+		
+		for(p; p < polygon.length; p++) {
+			result.push(polygon[p].x, polygon[p].y);
+		}
+		
+		
+		return result; 
+	}
+	
+	// This allows concave shapes!
+	function triangulatePolygon(polygon) {
+		var triangleIndicies = earcut(flattenPolygon(polygon));
+		var triangle = [];
+		var triangulatedPolygon = [];
+		var t;
+		
+		for(t = 0; t < triangleIndicies.length; t++) {
+			triangle.push(polygon[triangleIndicies[t]]);
+			
+			if((t+1) % 3 === 0) {
+				triangulatedPolygon.push(triangle);
+				triangle = [];
+			}
+		}
+		
+		return triangulatedPolygon;
+	}
+	
+	// This should be a class
+	// See: http://www.wikihow.com/Calculate-the-Area-of-a-Polygon
+	function getPolygonArea(polygon) {
+		var p = 0; 
+		
+		for(p; p < polygon.length -1
+	}
+	
 	/**
 	* @function getPolygonCentroid
 	* @param {Array} polygon - An array of objects with x/y properties that make up a polygon
 	* @returns {object} - Polygon centroid created from the average of X and Y coordinates
 	* @see: http://mathcentral.uregina.ca/qq/database/qq.09.07/h/david7.html (Not wrong, but may not be what I am looking for)
 	* @see: http://math.stackexchange.com/questions/3177/why-doesnt-a-simple-mean-give-the-position-of-a-centroid-in-a-polygon
+	* @see: http://math.stackexchange.com/questions/90463/how-can-i-calculate-the-centroid-of-polygon
 	* @todo: Triangulate polygon then calculate centroid from resulting triangles
 	*/
 	function getPolygonCentroid(polygon) {
@@ -155,6 +196,20 @@ window.onload = function() {
 		var point;
 		var sumX = 0;
 		var sumY = 0;
+		var triangleIndicies = earcut(flattenPolygon(polygon));
+		var triangle = [];
+		var triangles = [];
+		
+		for(var t = 0; t < triangleIndicies.length; t++) {
+			triangle.push(polygon[triangleIndicies[t]]);
+			
+			if((t+1) % 3 === 0) {
+				triangles.push(triangle);
+				triangle = [];
+			}
+		}
+		
+		console.log(triangles);
 		
 		for(p; p < polygon.length; p++) {
 			var point = polygon[p];
@@ -162,7 +217,7 @@ window.onload = function() {
 			sumX += point.x;
 			sumY += point.y;
 		}
-		
+				
 		return {x: sumX/polygon.length, y: sumY/polygon.length};
 	}
 	
@@ -333,6 +388,7 @@ window.onload = function() {
 		
 		this.aabb = getPolygonAABB(this.polygon);
 		this.polygonCenter = getPolygonCentroid(this.polygon);
+		this.triangulatedPolygon = triangulatePolygon(this.polygon);
 		console.log(this.polygonCenter);
 		
 		this.needsDelete = false;
@@ -360,32 +416,37 @@ window.onload = function() {
 			
 			drawWithRotation(context, this.position.x, this.position.y, this.rotation, function() {
 				var v = 1;
+				var t = 0;
 				var point;
+				var triangle;
 				
 				// Yes actual polygon centers are a thing :d
 				context.beginPath();
 				context.rect(-_this.aabb.width/2+_this.polygonCenter.x, -_this.aabb.height/2+_this.polygonCenter.y, _this.aabb.width, _this.aabb.height);
-				context.fillStyle = '#f0f';
+				context.fillStyle = '#0f0';
 				context.fill();
 				context.closePath();
 				
-				context.beginPath();
-				context.moveTo(_this.polygon[0].x, _this.polygon[0].y);
+				for(t = 0; t < _this.triangulatedPolygon.length; t++) {
+					triangle = _this.triangulatedPolygon[t];
+					
+					context.beginPath();
+					for(v = 0; v < triangle.length; v++) {
+						point = triangle[v];
+						
+						if(v === 0)
+							context.moveTo(point.x, point.y);
+						else
+							context.lineTo(point.x, point.y);
 							
-				for(v; v < _this.polygon.length; v++) {
-					point = _this.polygon[v];
+					}
 					
-					context.lineTo(point.x, point.y);
-					
+					context.lineTo(triangle[0].x, triangle[0].y);
+					context.stroke();
+					context.fillStyle = '#f00';
+					context.fill();
+					context.closePath();
 				}
-				
-				context.lineTo(_this.polygon[0].x, _this.polygon[0].y);
-				
-				context.fillStyle = '#f00';
-				
-				context.stroke();
-				context.fill();
-				context.closePath();
 
 			});
 			
@@ -446,7 +507,8 @@ window.onload = function() {
 			angle = 360*Math.random();
 			position = {x: 300 * Math.cos(angle * Math.PI/180) + player.position.x, y: 300 * Math.sin(angle * Math.PI/180) + player.position.y};
 			new Enemy({
-				position: position
+				position: position,
+				rotation: 360*Math.random()
 			});
 		}
 		
