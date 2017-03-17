@@ -175,11 +175,27 @@ window.onload = function() {
 	}
 	
 	// This should be a class
+	// Gets the polygon's area, needs a triangulated polygon to work
 	// See: http://www.wikihow.com/Calculate-the-Area-of-a-Polygon
-	function getPolygonArea(polygon) {
+	function getPolygonArea(triangulatedPolygon) {
 		var p = 0; 
+		var triangle;
+		var area;
+		var a;
+		var b; 
+		var c;
 		
-		for(p; p < polygon.length -1
+		for(p; p < triangulatedPolygon.length; p++) {
+			triangle = triangulatedPolygon[p];
+			a = triangle[0];
+			b = triangle[1];
+			c = triangle[2];
+			
+			area += (a.x*(b.y-c.y)+b.x*(c.y-a.y)+c.x*(a.y-b.y))/2
+			
+		}
+	
+		return area
 	}
 	
 	/**
@@ -191,7 +207,7 @@ window.onload = function() {
 	* @see: http://math.stackexchange.com/questions/90463/how-can-i-calculate-the-centroid-of-polygon
 	* @todo: Triangulate polygon then calculate centroid from resulting triangles
 	*/
-	function getPolygonCentroid(polygon) {
+	function getPolygonCentroid(triangulatedPolygon) {
 		var p = 0;
 		var point;
 		var sumX = 0;
@@ -199,26 +215,30 @@ window.onload = function() {
 		var triangleIndicies = earcut(flattenPolygon(polygon));
 		var triangle = [];
 		var triangles = [];
+		var triangleArea;
+		var triangleCentroid;
+		var weightedCentroid;
+		var totalArea = 0;
+		var t = 0;
+		var a;
+		var b; 
+		var c;
 		
-		for(var t = 0; t < triangleIndicies.length; t++) {
-			triangle.push(polygon[triangleIndicies[t]]);
+		for(t; t < triangulatedPolygon.length; t++) {
+			triangle = triangulatedPolygon[t];
+			a = triangle[0];
+			b = triangle[1];
+			c = triangle[2];
 			
-			if((t+1) % 3 === 0) {
-				triangles.push(triangle);
-				triangle = [];
-			}
+			triangleArea = (a.x*(b.y-c.y)+b.x*(c.y-a.y)+c.x*(a.y-b.y))/2
+			triangleCentroid = {x: (a.x+b.x+c.x)/3, y: (a.y, b.y, c.y)/3};
+			
+			weightedCentroid = {x: triangleArea*triangleCentroid.x, y: triangleArea*triangleCentroid.y};
+			
+			totalArea += triangleArea;
 		}
 		
-		console.log(triangles);
-		
-		for(p; p < polygon.length; p++) {
-			var point = polygon[p];
-			
-			sumX += point.x;
-			sumY += point.y;
-		}
-				
-		return {x: sumX/polygon.length, y: sumY/polygon.length};
+		return {x: 0, y: 0};
 	}
 	
 	// BEGIN: Projectile
