@@ -135,7 +135,7 @@ window.onload = function() {
 			minY = Math.min(minY, point.y);
 			maxY = Math.max(maxY, point.y);
 		}
-		console.log(minX, maxX, minY, maxY);
+
 		width = Math.abs(maxX - minX);
 		height = Math.abs(maxY - minY);
 		
@@ -212,18 +212,19 @@ window.onload = function() {
 		var point;
 		var sumX = 0;
 		var sumY = 0;
-		var triangleIndicies = earcut(flattenPolygon(polygon));
+		var triangleIndicies = earcut(flattenPolygon(triangulatedPolygon));
 		var triangle = [];
 		var triangles = [];
 		var triangleArea;
 		var triangleCentroid;
+		var totalTriangleCentroid = {x: 0, y: 0};
 		var weightedCentroid;
 		var totalArea = 0;
 		var t = 0;
 		var a;
 		var b; 
 		var c;
-		
+
 		for(t; t < triangulatedPolygon.length; t++) {
 			triangle = triangulatedPolygon[t];
 			a = triangle[0];
@@ -231,14 +232,16 @@ window.onload = function() {
 			c = triangle[2];
 			
 			triangleArea = (a.x*(b.y-c.y)+b.x*(c.y-a.y)+c.x*(a.y-b.y))/2
-			triangleCentroid = {x: (a.x+b.x+c.x)/3, y: (a.y, b.y, c.y)/3};
+			triangleCentroid = {x: (a.x+b.x+c.x)/3, y: (a.y+b.y+c.y)/3};
 			
 			weightedCentroid = {x: triangleArea*triangleCentroid.x, y: triangleArea*triangleCentroid.y};
+			totalTriangleCentroid.x += weightedCentroid.x;
+			totalTriangleCentroid.y += weightedCentroid.y;
 			
 			totalArea += triangleArea;
 		}
 		
-		return {x: 0, y: 0};
+		return {x: totalTriangleCentroid.x/totalArea, y: totalTriangleCentroid.y/totalArea};
 	}
 	
 	// BEGIN: Projectile
@@ -407,8 +410,9 @@ window.onload = function() {
 		this.pathToPlayer;
 		
 		this.aabb = getPolygonAABB(this.polygon);
-		this.polygonCenter = getPolygonCentroid(this.polygon);
+		
 		this.triangulatedPolygon = triangulatePolygon(this.polygon);
+		this.polygonCenter = getPolygonCentroid(this.triangulatedPolygon);
 		console.log(this.polygonCenter);
 		
 		this.needsDelete = false;
