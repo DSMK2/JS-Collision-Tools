@@ -113,18 +113,26 @@ window.onload = function() {
 	* @function getPolygonAABB
 	* @description Find's a polygon's axis aligned bounding box (AABB)
 	* @param {Array} polygon - An array of objects with x/y properties that make up a polygon
+	* @param {number} angle - Angle in degrees the polygon has been rotated;
 	* @returns {object} - width/height dimensions of a given polygon's AABB
 	*/
 	function getPolygonAABB(polygon) {
-		var minX = polygon[0].x;
-		var maxX = polygon[0].x;
-		var minY = polygon[0].y;
-		var maxY = polygon[0].y;
+		var minX;
+		var maxX;
+		var minY;
+		var maxY;
 		var width;
 		var height;
-		
+		var centerX;
+		var centerY;
+		// Iteration
 		var p = 1;
-		var point;
+		var point = polygon[0];
+
+		var minX = point.x;
+		var maxX = point.x;
+		var minY = point.y;
+		var maxY = point.y;
 		
 		for(p; p < polygon.length; p++) {
 			point = polygon[p];
@@ -136,10 +144,13 @@ window.onload = function() {
 			maxY = Math.max(maxY, point.y);
 		}
 
-		width = Math.abs(maxX - minX);
-		height = Math.abs(maxY - minY);
+		centerX = (minX + maxX) / 2;
+		centerY = (minY + maxY) / 2;
 		
-		return {width: width, height: height};
+		width = maxX - minX;
+		height = maxY - minY;
+
+		return {x: centerX, y: centerY, width: width, height: height};
 	}
 	
 	// A helper function that transform an array of vertex objects into integer pairs
@@ -200,6 +211,7 @@ window.onload = function() {
 	
 	/**
 	* @function getPolygonCentroid
+	* @description: This gets center of mass
 	* @param {Array} polygon - An array of objects with x/y properties that make up a polygon
 	* @returns {object} - Polygon centroid created from the average of X and Y coordinates
 	* @see: http://mathcentral.uregina.ca/qq/database/qq.09.07/h/david7.html (Not wrong, but may not be what I am looking for)
@@ -212,7 +224,6 @@ window.onload = function() {
 		var point;
 		var sumX = 0;
 		var sumY = 0;
-		var triangleIndicies = earcut(flattenPolygon(triangulatedPolygon));
 		var triangle = [];
 		var triangles = [];
 		var triangleArea;
@@ -224,7 +235,7 @@ window.onload = function() {
 		var a;
 		var b; 
 		var c;
-
+				
 		for(t; t < triangulatedPolygon.length; t++) {
 			triangle = triangulatedPolygon[t];
 			a = triangle[0];
@@ -242,6 +253,38 @@ window.onload = function() {
 		}
 		
 		return {x: totalTriangleCentroid.x/totalArea, y: totalTriangleCentroid.y/totalArea};
+	}
+	
+	function rotateVertex(vertex, origin, angle) {
+		var vertexOffsetX = vertex.x - origin.x;
+		var vertexOffsetY = vertex.y - origin.y;
+		var vertexRotatedX = (vertexOffsetX * Math.cos(angle * Math.PI/180)) - (vertexOffsetY * Math.sin(angle * Math.PI/180)) + origin.x; 
+		var vertexRotatedY = (vertexOffsetY * Math.cos(angle * Math.PI/180)) + (vertexOffsetX * Math.sin(angle * Math.PI/180)) + origin.y; 
+		
+		return {x: vertexRotatedX, y: vertexRotatedY};
+	}
+	
+	function cloneVertex(vertexData) {
+		var vertexCurrent;
+		var vertexArray = [];
+		var v = 0;
+		var x;
+		var y;
+		
+		if(typeof vertexData === 'object') {
+			if(vertexData instanceof Array) {
+			
+				for(v; v < vertexData.length; v++) {
+					vertexCurrent = vertexData[v];
+					vertexArray.push({x: typeof vertexCurrent.x === 'undefined' ? 0 : vertexCurrent.x, y: typeof vertexCurrent.y === 'undefined' ? 0 : vertexCurrent.y});
+				}
+				return vertexArray;
+				
+			} else
+				return {x: typeof vertexData.x === 'undefined' ? 0 : vertexData.x, y: typeof vertexData.y === 'undefined' ? 0 : vertexData.y};
+		}
+		
+		return {x: 0, y: 0};
 	}
 	
 	// BEGIN: Projectile
@@ -326,6 +369,7 @@ window.onload = function() {
 				var i = 1;
 				var point;
 				
+				context.beginPath();
 				
 				context.moveTo(_this.polygon[0].x, _this.polygon[0].y); 
 				
@@ -340,6 +384,7 @@ window.onload = function() {
 				context.fill();
 				context.stroke();
 			
+				context.closePath();
 			});
 			
 		}
@@ -404,16 +449,18 @@ window.onload = function() {
 		options = extend(defaults, options);
 		
 		this.hp = options.hp;
-		this.rotation = options.rotation;
+
 		this.position = options.position;
-		this.polygon = options.polygon;
+		this.polygonBase = cloneVertex(options.polygon);
+		this.polygon =  cloneVertex(options.polygon);
+		console.log(this.polygon);
 		this.pathToPlayer;
-		
-		this.aabb = getPolygonAABB(this.polygon);
+		this.rotation = options.rotation;
+		this.prevRotation = 0;
+		this.aabb = getPolygonAABB(this.polygon, this.rotation);
 		
 		this.triangulatedPolygon = triangulatePolygon(this.polygon);
-		this.polygonCenter = getPolygonCentroid(this.triangulatedPolygon);
-		console.log(this.polygonCenter);
+		this.polygonCenter = {x: 90, y: 0};//getPolygonCentroid(this.triangulatedPolygon); 
 		
 		this.needsDelete = false;
 		this.GUID = uuid.v4();
@@ -430,7 +477,26 @@ window.onload = function() {
 	
 	Enemy.prototype = {
 		update: function(){
-			var path
+			var path;
+			var point;
+			var p = 0;
+			var pX;
+			var pY;
+			this.rotation += 0.5;
+			this.rotation = this.rotation >= 360 ? this.rotation - 360 * Math.floor(this.rotation / 360) : (this.rotation < 0 ? this.rotation + 360 * Math.floor(Math.abs(this.rotation / 360)) : this.rotation);
+			var dRotation = this.rotation - this.prevRotation;
+			
+			for(p; p < this.polygon.length; p++) {
+				point = this.polygon[p];
+				
+				pX = (point.x-this.aabb.x);
+				pY = (point.y-this.aabb.y);
+				this.polygon[p] = rotateVertex(point, this.aabb, dRotation);
+			}
+			
+			this.aabb = getPolygonAABB(this.polygon, this.rotation);
+			this.prevRotation = this.rotation;
+			//console.log(this.aabb);
 			// Get path
 			// Move along path
 			// Rinse, repeat per update
@@ -438,50 +504,102 @@ window.onload = function() {
 		redraw: function(){
 			var _this = this;
 			
-			drawWithRotation(context, this.position.x, this.position.y, this.rotation, function() {
-				var v = 1;
-				var t = 0;
-				var point;
-				var triangle;
+			context.beginPath();
+			context.rect(-this.aabb.width/2+this.aabb.x+this.position.x, -this.aabb.height/2+this.aabb.y+this.position.y, this.aabb.width, this.aabb.height);
+			context.fillStyle = '#0f0';
+			context.fill();
+			context.closePath();
+			
+			var v = 1;
+			var t = 0;
+			var point;
+			var triangle;
+			
+			// Yes actual polygon centers are a thing :d
+			/*
+			context.beginPath();
+			context.rect(-_this.aabb.width/2+_this.aabb.x, -_this.aabb.height/2+_this.aabb.y, _this.aabb.width, _this.aabb.height);
+			context.fillStyle = '#0f0';
+			context.fill();
+			context.closePath();
+			*/
+			
+			context.beginPath();
+			for(t = 0; t < this.polygon.length; t++) {
+				point = this.polygon[t];
+				if(t === 0)
+					context.moveTo(point.x+this.position.x, point.y+this.position.y);
+				else
+					context.lineTo(point.x+this.position.x, point.y+this.position.y);
 				
-				// Yes actual polygon centers are a thing :d
-				context.beginPath();
-				context.rect(-_this.aabb.width/2+_this.polygonCenter.x, -_this.aabb.height/2+_this.polygonCenter.y, _this.aabb.width, _this.aabb.height);
-				context.fillStyle = '#0f0';
-				context.fill();
-				context.closePath();
 				
-				for(t = 0; t < _this.triangulatedPolygon.length; t++) {
-					triangle = _this.triangulatedPolygon[t];
-					
-					context.beginPath();
-					for(v = 0; v < triangle.length; v++) {
-						point = triangle[v];
-						
-						if(v === 0)
-							context.moveTo(point.x, point.y);
-						else
-							context.lineTo(point.x, point.y);
-							
-					}
-					
-					context.lineTo(triangle[0].x, triangle[0].y);
-					context.stroke();
-					context.fillStyle = '#f00';
-					context.fill();
-					context.closePath();
-				}
 
-			});
+			}
+			context.stroke();
+			context.fillStyle = '#f00';
+			context.fill();
+			context.closePath();
+			//console.log(this.aabb.width, this.aabb.height);
+			
 			
 		}
 	};
 	// END: Enemy
 	
+	// BEGIN: Terrain
+	function Terrain() {
+		this.size = 50; // px
+		this.grid = {};
+		
+		this.xMax = canvas.clientWidth / this.size;
+		this.yMax = canvas.clientHeight / this.size;
+		
+		var simplex = new SimplexNoise();
+		var x = 0;
+		var y = 0;
+		
+		for(x = 0; x < this.xMax; x++) {
+			for(y = 0; y < this.yMax; y++) {
+				this.grid[x + '_' + y] = Math.round(10 * Math.abs(simplex.noise2D(x/8, y/8)));
+			}
+		}
+				
+		return this;
+	}
+	
+	Terrain.prototype = {
+		redraw: function() {
+			var x = 0;
+			var y = 0;
+			var position;
+			var cost;
+			
+			for(x = 0; x < this.xMax; x++) {
+				for(y = 0; y < this.yMax; y++) {
+					
+					position = x + '_' + y;
+					if(this.grid.hasOwnProperty(position)) {
+						cost = this.grid[position];
+						context.beginPath();
+						context.rect(x * this.size, y * this.size, this.size, this.size);
+						context.fillStyle = 'rgb(' + (150*(cost/10)) + ', ' + (150*(cost/10)) + ', ' + + (150*(cost/10)) + ')';
+						context.fill();
+						context.closePath();
+					}
+				}
+			}
+			
+		}
+	}
+	
+	var terrain;
+	// END: Terrain
+	
 	// BEGIN: Init
 	init: {
 		var width;
 		var height;
+		
 		
 		context.canvas.width = canvas.clientWidth;
 		context.canvas.height = canvas.clientHeight;
@@ -492,6 +610,8 @@ window.onload = function() {
 		player = new Player({
 			position: {x: width/2, y: height/2}
 		});
+		
+		terrain = new Terrain();
 	}
 	// END: Init
 	
@@ -522,9 +642,10 @@ window.onload = function() {
 		var position;
 		var angle;
 		
+		
+		spatialHash.clear();
+		
 		player.setRotation(angle);
-		
-		
 		
 		// Spawn moar enemies 
 		if(Enemy.count < enemyMin) {
@@ -544,6 +665,8 @@ window.onload = function() {
 			for(enemyID in Enemy.enemies) {
 				if(Enemy.enemies.hasOwnProperty(enemyID)) {
 					enemy = Enemy.enemies[enemyID];
+					enemy.update();
+					spatialHash.insert(enemy.x+enemy.aabb.x, enemy.y+enemy.aabb.y, enemy.aabb.width, enemy.aabb.height, enemy);
 				}
 				
 			}
@@ -567,6 +690,8 @@ window.onload = function() {
 		var i = 0;
 		
 		context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+		
+		terrain.redraw();
 		
 		player.redraw();
 		
