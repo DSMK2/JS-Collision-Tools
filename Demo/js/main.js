@@ -478,13 +478,33 @@ window.onload = function() {
 	Enemy.prototype = {
 		update: function(){
 			var path;
+			var pathStep;
+			var pathAngle;
 			var point;
 			var p = 0;
 			var pX;
 			var pY;
-			this.rotation += 0.5;
+			//this.rotation += 0.5;
 			this.rotation = this.rotation >= 360 ? this.rotation - 360 * Math.floor(this.rotation / 360) : (this.rotation < 0 ? this.rotation + 360 * Math.floor(Math.abs(this.rotation / 360)) : this.rotation);
 			var dRotation = this.rotation - this.prevRotation;
+			
+			
+			path = breadthFirstSearch({x: this.position.x + this.aabb.x, y: this.position.x + this.aabb.y, width: this.aabb.width, height: this.aabb.height}, function(){
+			}, 
+			{
+				targetPosition: {x: context.canvas.width/2, y: context.canvas.height/2},
+				range: 500,
+				nodeTest: function(x, y, gridX, gridY, size) {
+					return Terrain.terrain.getCostAtPosition(x, y);
+				}
+			});
+			
+			if(path.length !== 0) {
+				pathAngle = getAngleToPosition(this.position.x, this.position.y, path[0].gridX*path[0].size, path[0].gridY*path[0].size);
+			
+				this.position.x += 0.5 * Math.cos(pathAngle);
+				this.position.y += 0.5 * Math.sin(pathAngle);
+			}
 			
 			for(p; p < this.polygon.length; p++) {
 				point = this.polygon[p];
@@ -495,6 +515,8 @@ window.onload = function() {
 			}
 			
 			this.aabb = getPolygonAABB(this.polygon, this.rotation);
+
+			
 			this.prevRotation = this.rotation;
 			//console.log(this.aabb);
 			// Get path
@@ -548,7 +570,7 @@ window.onload = function() {
 	
 	// BEGIN: Terrain
 	function Terrain() {
-		this.size = 50; // px
+		this.size = 25; // px
 		this.grid = {};
 		
 		this.xMax = canvas.clientWidth / this.size;
@@ -568,6 +590,10 @@ window.onload = function() {
 	}
 	
 	Terrain.prototype = {
+		getCostAtPosition: function(x, y) {
+			//console.log(x, y);
+			return this.grid[Math.floor(x/this.size) + '_' + Math.floor(y/this.size)]
+		},
 		redraw: function() {
 			var x = 0;
 			var y = 0;
@@ -592,7 +618,7 @@ window.onload = function() {
 		}
 	}
 	
-	var terrain;
+	Terrain.terrain;
 	// END: Terrain
 	
 	// BEGIN: Init
@@ -611,7 +637,7 @@ window.onload = function() {
 			position: {x: width/2, y: height/2}
 		});
 		
-		terrain = new Terrain();
+		Terrain.terrain = new Terrain();
 	}
 	// END: Init
 	
@@ -648,9 +674,9 @@ window.onload = function() {
 		player.setRotation(angle);
 		
 		// Spawn moar enemies 
-		if(Enemy.count < enemyMin) {
+		if(Enemy.count < 1) {
 			angle = 360*Math.random();
-			position = {x: 300 * Math.cos(angle * Math.PI/180) + player.position.x, y: 300 * Math.sin(angle * Math.PI/180) + player.position.y};
+			position = {x: 500 * Math.cos(angle * Math.PI/180) + player.position.x, y: 300 * Math.sin(angle * Math.PI/180) + player.position.y};
 			new Enemy({
 				position: position,
 				rotation: 360*Math.random()
@@ -691,7 +717,7 @@ window.onload = function() {
 		
 		context.clearRect(0, 0, context.canvas.width, context.canvas.height);
 		
-		terrain.redraw();
+		Terrain.terrain.redraw();
 		
 		player.redraw();
 		

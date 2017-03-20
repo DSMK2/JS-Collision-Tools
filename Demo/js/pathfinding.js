@@ -29,6 +29,7 @@ function breadthFirstSearch(polygon, callback, options) {
 	var nextNodes; // = new PriorityQueue({isMin: true});
 	var needsExit = false;
 	var costSoFar = 0;
+	var resultPath = [];
 	
 	/**
 	* @function extend 
@@ -361,6 +362,7 @@ function breadthFirstSearch(polygon, callback, options) {
 				if(typeof Node.grid[nextGrid] !== 'undefined') {
 					if((typeof minCost === 'undefined' && typeof minDistance === 'undefined') || minCost >= Node.grid[nextGrid].cost) {
 						
+						resultPath.push(Node.grid[nextGrid]);
 						minCost = Node.grid[nextGrid].cost;
 						nextNode = Node.grid[nextGrid];
 						nextGridX = tempNextGridX;
@@ -487,5 +489,5 @@ function breadthFirstSearch(polygon, callback, options) {
 	
 	Node.pathToTarget();
 	
-	return Node.grid;
+	return resultPath;
 }
