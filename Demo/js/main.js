@@ -287,6 +287,10 @@ window.onload = function() {
 		return {x: 0, y: 0};
 	}
 	
+	function getDistanceBetweenVertices(vertexA, vertexB) {
+		return Math.sqrt(Math.pow(vertexA.x - vertexB.x, 2) + Math.pow(vertexA.y - vertexB.y, 2));;
+	}
+	
 	// BEGIN: Projectile
 	function Projectile(options) {
 		var defaults = {
@@ -462,6 +466,18 @@ window.onload = function() {
 		this.triangulatedPolygon = triangulatePolygon(this.polygon);
 		this.polygonCenter = {x: 90, y: 0};//getPolygonCentroid(this.triangulatedPolygon); 
 		
+		// Path
+		this.path = [];
+		this.path = breadthFirstSearch({x: this.position.x, y: this.position.y, width: this.aabb.width, height: this.aabb.height}, function(){
+		}, 
+		{
+				targetPosition: {x: context.canvas.width/2, y: context.canvas.height/2},
+				range: 1000,
+				nodeTest: function(x, y, gridX, gridY, size) {
+					return Terrain.terrain.getCostAtPosition(x, y);
+				}
+		});
+		this.pathStepCurrent = this.path.pop();
 		this.needsDelete = false;
 		this.GUID = uuid.v4();
 		
@@ -477,35 +493,39 @@ window.onload = function() {
 	
 	Enemy.prototype = {
 		update: function(){
-			var path;
+			var currentStep;
 			var pathStep;
-			var pathAngle;
+			var pathAngle = 0;
 			var point;
 			var p = 0;
 			var pX;
 			var pY;
+			
+			if(typeof this.pathStepCurrent === 'undefined')
+				return;
+			
 			//this.rotation += 0.5;
-			this.rotation = this.rotation >= 360 ? this.rotation - 360 * Math.floor(this.rotation / 360) : (this.rotation < 0 ? this.rotation + 360 * Math.floor(Math.abs(this.rotation / 360)) : this.rotation);
-			var dRotation = this.rotation - this.prevRotation;
-			
-			
-			path = breadthFirstSearch({x: this.position.x + this.aabb.x, y: this.position.x + this.aabb.y, width: this.aabb.width, height: this.aabb.height}, function(){
-			}, 
-			{
-				targetPosition: {x: context.canvas.width/2, y: context.canvas.height/2},
-				range: 500,
-				nodeTest: function(x, y, gridX, gridY, size) {
-					return Terrain.terrain.getCostAtPosition(x, y);
+			var adjustedX = Math.floor((this.position.x+ this.aabb.x)/this.pathStepCurrent.size)*this.pathStepCurrent.size
+			var adjustedY = Math.floor((this.position.y + this.aabb.y)/this.pathStepCurrent.size)*this.pathStepCurrent.size
+			var minDist = 30;
+			var dist = getDistanceBetweenVertices({x: this.position.x+ this.aabb.x, y: this.position.y + this.aabb.y}, {x:this.pathStepCurrent.gridX*this.pathStepCurrent.size, y:this.pathStepCurrent.gridY*this.pathStepCurrent.size}) ;
+			if(dist <= minDist) {
+				
+				
+				if(this.path.length !== 0) {
+					this.pathStepCurrent = this.path.pop();
+					
 				}
-			});
-			
-			if(path.length !== 0) {
-				pathAngle = getAngleToPosition(this.position.x, this.position.y, path[0].gridX*path[0].size, path[0].gridY*path[0].size);
-			
-				this.position.x += 0.5 * Math.cos(pathAngle);
-				this.position.y += 0.5 * Math.sin(pathAngle);
 			}
 			
+			currentStep = this.pathStepCurrent;
+			pathAngle = getAngleToPosition(this.position.x, this.position.y, currentStep.gridX*currentStep.size, currentStep.gridY*currentStep.size);
+			this.rotation = pathAngle * 180/Math.PI;
+			this.position.x += 2 * Math.cos(pathAngle);
+			this.position.y += 2 * Math.sin(pathAngle);
+					
+			this.rotation = this.rotation >= 360 ? this.rotation - 360 * Math.floor(this.rotation / 360) : (this.rotation < 0 ? this.rotation + 360 * Math.floor(Math.abs(this.rotation / 360)) : this.rotation);
+			var dRotation = this.rotation - this.prevRotation;
 			for(p; p < this.polygon.length; p++) {
 				point = this.polygon[p];
 				
@@ -553,14 +573,23 @@ window.onload = function() {
 					context.moveTo(point.x+this.position.x, point.y+this.position.y);
 				else
 					context.lineTo(point.x+this.position.x, point.y+this.position.y);
-				
-				
 
 			}
 			context.stroke();
 			context.fillStyle = '#f00';
 			context.fill();
 			context.closePath();
+			
+			var asdf;
+			
+			for(t = 0; t < this.path.length; t++) {
+				asdf = this.path[t];
+				context.rect(-asdf.size/2+asdf.gridX*asdf.size, -asdf.size/2+asdf.gridY*asdf.size, asdf.size, asdf.size);
+				context.fillStyle = 'rgba(255, 150, 0, 0.4)';
+				context.fill();
+				context.closePath();
+			}
+		
 			//console.log(this.aabb.width, this.aabb.height);
 			
 			
@@ -582,7 +611,7 @@ window.onload = function() {
 		
 		for(x = 0; x < this.xMax; x++) {
 			for(y = 0; y < this.yMax; y++) {
-				this.grid[x + '_' + y] = Math.round(10 * Math.abs(simplex.noise2D(x/8, y/8)));
+				this.grid[x + '_' + y] = Math.round(50 * Math.abs(simplex.noise2D(x/8, y/8)));
 			}
 		}
 				
@@ -592,7 +621,7 @@ window.onload = function() {
 	Terrain.prototype = {
 		getCostAtPosition: function(x, y) {
 			//console.log(x, y);
-			return this.grid[Math.floor(x/this.size) + '_' + Math.floor(y/this.size)]
+			return this.grid[Math.floor(x/this.size) + '_' + Math.floor(y/this.size)];
 		},
 		redraw: function() {
 			var x = 0;
@@ -674,7 +703,7 @@ window.onload = function() {
 		player.setRotation(angle);
 		
 		// Spawn moar enemies 
-		if(Enemy.count < 1) {
+		if(Enemy.count < 10) {
 			angle = 360*Math.random();
 			position = {x: 500 * Math.cos(angle * Math.PI/180) + player.position.x, y: 300 * Math.sin(angle * Math.PI/180) + player.position.y};
 			new Enemy({
