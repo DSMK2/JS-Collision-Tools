@@ -11,6 +11,8 @@ window.onload = function() {
 	
 	var spatialHash = new SpatialHash(30, 30);
 	
+	
+	window.testEnemy = 0;
 	/**
 	* @function extend 
 	* @description Returns an object that has 'default' values overwritten by 'options', otherwise default values. Properties not found in defaults are skipped.
@@ -457,7 +459,6 @@ window.onload = function() {
 		this.position = options.position;
 		this.polygonBase = cloneVertex(options.polygon);
 		this.polygon =  cloneVertex(options.polygon);
-		console.log(this.polygon);
 		this.pathToPlayer;
 		this.rotation = options.rotation;
 		this.prevRotation = 0;
@@ -468,18 +469,12 @@ window.onload = function() {
 		
 		// Path
 		this.path = [];
-		this.path = breadthFirstSearch({x: this.position.x, y: this.position.y, width: this.aabb.width, height: this.aabb.height}, function(){
-		}, 
-		{
-				targetPosition: {x: context.canvas.width/2, y: context.canvas.height/2},
-				range: 1000,
-				nodeTest: function(x, y, gridX, gridY, size) {
-					return Terrain.terrain.getCostAtPosition(x, y);
-				}
-		});
-		this.pathStepCurrent = this.path.pop();
+		
 		this.needsDelete = false;
 		this.GUID = uuid.v4();
+		
+		this.color = 'rgb('+ Math.floor(255 * Math.random()) + ', ' + Math.floor(255 * Math.random()) + ', ' + Math.floor(255 * Math.random()) + ')';
+		console.log(this.color);
 		
 		Enemy.enemies[this.GUID] = this;
 		Enemy.count++;
@@ -501,6 +496,20 @@ window.onload = function() {
 			var pX;
 			var pY;
 			
+			if(this.path.length === 0) {
+				this.path = breadthFirstSearch({x: this.position.x, y: this.position.y, width: this.aabb.width, height: this.aabb.height}, function(){
+				}, 
+				{
+						targetPosition: {x: context.canvas.width/2, y: context.canvas.height/2},
+						range: 1000,
+						nodeTest: function(x, y, gridX, gridY, size) {
+							return Terrain.terrain.getCostAtPosition(x, y);
+						}
+				});
+		
+				this.pathStepCurrent = this.path.pop();
+			}
+			
 			if(typeof this.pathStepCurrent === 'undefined')
 				return;
 			
@@ -508,7 +517,7 @@ window.onload = function() {
 			var adjustedX = Math.floor((this.position.x+ this.aabb.x)/this.pathStepCurrent.size)*this.pathStepCurrent.size
 			var adjustedY = Math.floor((this.position.y + this.aabb.y)/this.pathStepCurrent.size)*this.pathStepCurrent.size
 			var minDist = 30;
-			var dist = getDistanceBetweenVertices({x: this.position.x+ this.aabb.x, y: this.position.y + this.aabb.y}, {x:this.pathStepCurrent.gridX*this.pathStepCurrent.size, y:this.pathStepCurrent.gridY*this.pathStepCurrent.size}) ;
+			var dist = getDistanceBetweenVertices({x: this.position.x, y: this.position.y}, {x:this.pathStepCurrent.x, y:this.pathStepCurrent.y}) ;
 			if(dist <= minDist) {
 				
 				
@@ -519,10 +528,10 @@ window.onload = function() {
 			}
 			
 			currentStep = this.pathStepCurrent;
-			pathAngle = getAngleToPosition(this.position.x, this.position.y, currentStep.gridX*currentStep.size, currentStep.gridY*currentStep.size);
+			pathAngle = getAngleToPosition(this.position.x, this.position.y, currentStep.x, currentStep.y);
 			this.rotation = pathAngle * 180/Math.PI;
-			this.position.x += 2 * Math.cos(pathAngle);
-			this.position.y += 2 * Math.sin(pathAngle);
+			this.position.x += 0.5 * Math.cos(pathAngle);
+			this.position.y += 0.5 * Math.sin(pathAngle);
 					
 			this.rotation = this.rotation >= 360 ? this.rotation - 360 * Math.floor(this.rotation / 360) : (this.rotation < 0 ? this.rotation + 360 * Math.floor(Math.abs(this.rotation / 360)) : this.rotation);
 			var dRotation = this.rotation - this.prevRotation;
@@ -575,24 +584,28 @@ window.onload = function() {
 					context.lineTo(point.x+this.position.x, point.y+this.position.y);
 
 			}
+			context.strokeStyle = '#000000';
 			context.stroke();
-			context.fillStyle = '#f00';
+			context.fillStyle = this.color;
 			context.fill();
 			context.closePath();
 			
 			var asdf;
 			
-			for(t = 0; t < this.path.length; t++) {
-				asdf = this.path[t];
-				context.rect(-asdf.size/2+asdf.gridX*asdf.size, -asdf.size/2+asdf.gridY*asdf.size, asdf.size, asdf.size);
-				context.fillStyle = 'rgba(255, 150, 0, 0.4)';
-				context.fill();
+			if(this.path.length !== 0) {
+				context.beginPath();
+				asdf = this.path[0];
+				context.moveTo(asdf.x, asdf.y);
+				for(t = 1; t < this.path.length; t++) {
+					asdf = this.path[t];
+					context.lineTo(asdf.x, asdf.y);
+				}
+				context.strokeStyle = this.color;
+				context.lineWidth = 3;
+				context.stroke();
 				context.closePath();
 			}
 		
-			//console.log(this.aabb.width, this.aabb.height);
-			
-			
 		}
 	};
 	// END: Enemy
@@ -609,9 +622,13 @@ window.onload = function() {
 		var x = 0;
 		var y = 0;
 		
+		var cost;
+		
 		for(x = 0; x < this.xMax; x++) {
 			for(y = 0; y < this.yMax; y++) {
-				this.grid[x + '_' + y] = Math.round(50 * Math.abs(simplex.noise2D(x/8, y/8)));
+				cost = Math.round(4 * Math.abs(simplex.noise2D(x/16, y/16)));
+				cost = cost >= 3 ? 999: cost;
+				this.grid[x + '_' + y] = cost;
 			}
 		}
 				
@@ -620,8 +637,8 @@ window.onload = function() {
 	
 	Terrain.prototype = {
 		getCostAtPosition: function(x, y) {
-			//console.log(x, y);
-			return this.grid[Math.floor(x/this.size) + '_' + Math.floor(y/this.size)];
+			var cost =  this.grid[Math.floor(x/this.size) + '_' + Math.floor(y/this.size)];
+			return typeof cost === 'undefined' ? 0 : cost;
 		},
 		redraw: function() {
 			var x = 0;
@@ -703,7 +720,7 @@ window.onload = function() {
 		player.setRotation(angle);
 		
 		// Spawn moar enemies 
-		if(Enemy.count < 10) {
+		if(Enemy.count < window.testEnemy) {
 			angle = 360*Math.random();
 			position = {x: 500 * Math.cos(angle * Math.PI/180) + player.position.x, y: 300 * Math.sin(angle * Math.PI/180) + player.position.y};
 			new Enemy({

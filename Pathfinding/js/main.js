@@ -12,7 +12,7 @@ window.onload = function() {
 	var obstacleRectsArr = [];
 	var fps = 60;
 	var updateInterval;
-	var nodes;
+	var nodes = [];
 	var spatialHash = new SpatialHash(50, 50);
 	var target;
 	var simplex = new SimplexNoise();
@@ -157,7 +157,6 @@ window.onload = function() {
 			targetPosition: {x: 800, y: 300}
 		});
 
-
 	}
 	
 	function redraw(){
@@ -165,6 +164,7 @@ window.onload = function() {
 		var prop;
 		var prop2;
 		var node;
+		var n;
 	 
 		
 		context.clearRect(0, 0, context.canvas.width, context.canvas.height);
@@ -181,25 +181,27 @@ window.onload = function() {
 			}
 		}		
 		
-		context.globalAlpha = 0.5;
-		for(prop in nodes) {
+		if(nodes.length !== 0) {
+			context.globalAlpha = 0.5;
+			for(n = 0; n < nodes.length; n++) {
 
-			node = nodes[prop];
+				node = nodes[n];
 				
-			context.beginPath();
-			context.rect(node.x, node.y, node.size, node.size);
+				context.beginPath();
+				context.rect(node.x, node.y, node.size, node.size);
 			
-			context.stokeStyle='#000000';
-			context.fillStyle= node.visited ? '#ffffff' : (node.costOffset !== 0 ? '#821313' : '#999999');
+				context.stokeStyle='#000000';
+				context.fillStyle= node.visited ? '#ffffff' : (node.costOffset !== 0 ? '#821313' : '#999999');
 			
-			context.fill();
-			context.stroke();
-			context.fillStyle= '#000000';
-			//context.fillText(node.cost + ' ' + node.arrow, node.x, node.y+node.size/2);
-			context.closePath();
+				context.fill();
+				context.stroke();
+				context.fillStyle= '#000000';
+				//context.fillText(node.cost + ' ' + node.arrow, node.x, node.y+node.size/2);
+				context.closePath();
 
+			}
+			context.globalAlpha = 1;
 		}
-		context.globalAlpha = 1;
 		
 		
 		
