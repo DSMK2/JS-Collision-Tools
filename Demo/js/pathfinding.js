@@ -352,6 +352,7 @@ function breadthFirstSearch(polygon, callback, options) {
 		
 		while(currentNode !== startNode && typeof currentNode.origin !== 'undefined') {
 			nextNode = undefined;
+			
 			for(d = 0; d < dirs.length; d++) {
 				tempNextGridX = currentGridX+dirs[d][0];
 				tempNextGridY = currentGridY+dirs[d][1];
@@ -369,7 +370,7 @@ function breadthFirstSearch(polygon, callback, options) {
 					}
 				}
 			}
-			//console.log('asdf2');
+
 			if(typeof nextNode !== 'undefined') {
 				resultPath.push(nextNode);
 				currentNode = nextNode;
